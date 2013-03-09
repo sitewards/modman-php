@@ -1,11 +1,11 @@
 <?php
-
-
 class Modman {
 	public function run($aParameters) {
 		try {
 			if (!isset($aParameters[1])) {
-				throw new Exception('command not found');
+				// show help if called without parameters
+				$this->printHelp();
+				exit;
 			}
 
 			$bForce = array_search('--force', $aParameters);
@@ -41,6 +41,27 @@ class Modman {
 			echo $oException->getMessage();
 		}
 	}
+
+	private function printHelp(){
+		$sHelp = <<< EOH
+PHP-based module manager, originally implemented as bash-script
+(for original implementation see https://github.com/colinmollenhour/modman)
+
+Following general commands are currently supported:
+- link (with or without --force)
+- init
+- repair
+- deploy (with or without --force)
+- deploy-all (with or without --force)
+
+Currently supported in modman-files:
+- symlinks
+- import command
+EOH;
+
+		echo $sHelp;
+	}
+
 }
 
 class Modman_Command_All {
