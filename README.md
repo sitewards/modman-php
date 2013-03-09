@@ -19,7 +19,10 @@ Usage examples:
     php modman.php deploy B2BProfessional
 
 
- Started at Magento Hackathon in Zürich 2013-03-09
+VCS integration is postponed, because there are great clients out there, so we don't use it in modman anyway.
 
 
- Influenced by the original modman at https://github.com/colinmollenhour/modman/
+Started at Magento Hackathon in Zürich 2013-03-09
+
+
+Influenced by the original modman at https://github.com/colinmollenhour/modman/
