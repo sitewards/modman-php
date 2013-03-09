@@ -19,6 +19,11 @@ Usage examples:
     php modman.php link ..\B2BProfessional
     php modman.php deploy B2BProfessional
 
+Currently supported in modman files:
+ - symlinks
+ - @import
+ - @shell
+
 
 VCS integration is postponed, because there are great clients out there, so we don't use it in modman anyway.
 

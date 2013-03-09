@@ -65,7 +65,7 @@ Following general commands are currently supported:
 
 Currently supported in modman-files:
 - symlinks
-- import command
+- @import and @shell command
 EOH;
 
 		echo $sHelp;
@@ -164,6 +164,7 @@ class Modman_Reader {
 	private $aFileContent = array();
 	private $aObjects = array();
 	private $sClassName;
+	private $aShells = array();
 
 	public function __construct($sDirectory) {
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
@@ -180,20 +181,24 @@ class Modman_Reader {
 				// skip comments
 				continue;
 			}
+			$aParameters = $this->getParamsArray($sLine);
 			if (substr($sLine, 0, 7) == '@import') {
-				$this->doImport($this->getParamsArray($sLine));
+				$this->doImport($aParameters);
+				continue;
+			} elseif (substr($sLine, 0, 6) == '@shell') {
+				unset($aParameters[0]);
+				$this->aShells[] = implode(' ', $aParameters);
 				continue;
 			} elseif (substr($sLine, 0, 1) == '@'){
+				echo 'Do not understand: ' . $sLine . PHP_EOL;
 				continue;
 			}
-			$aParameters = $this->getParamsArray($sLine);
 			$this->aObjects[] = new $sClassName($aParameters);
 		}
 		return $this->aObjects;
 	}
 
 	private function doImport($aCommandParams){
-
 		$sDirectoryName = realpath($aCommandParams[1]);
 		if (!$sDirectoryName){
 			throw new Exception('The import path could not be parsed!');
@@ -205,13 +210,27 @@ class Modman_Reader {
 		$this->aObjects = array_merge($this->aObjects, $aObjects);
 	}
 
+	public function getShells() {
+		return $this->aShells;
+	}
+
 }
 
 class Modman_Reader_Conflicts {
 	private $aConflicts = array();
 
 	public function checkForConflict($sSymlink, $sType, $sTarget = false) {
-		if (file_exists($sSymlink)) {
+		if (is_link($sSymlink)) {
+			if (
+				!(
+					$sType == 'link'
+					AND
+					realpath($sSymlink) == realpath($sTarget)
+				)
+			) {
+				$this->aConflicts[$sSymlink] = 'link';
+			}
+		} elseif (file_exists($sSymlink)) {
 			if (is_dir($sSymlink)) {
 				if ($sType == 'dir') {
 					return;
@@ -220,15 +239,6 @@ class Modman_Reader_Conflicts {
 			} else {
 				$this->aConflicts[$sSymlink] = 'file';
 			}
-		} elseif (
-			is_link($sSymlink)
-			AND !(
-				$sType == 'link'
-				AND
-				realpath($sSymlink) == realpath($sTarget)
-			)
-		) {
-			$this->aConflicts[$sSymlink] = 'link';
 		}
 	}
 
@@ -333,10 +343,19 @@ class Modman_Command_Deploy {
 				echo 'Create directory ' . $sDirectoryName . PHP_EOL;
 				mkdir($sDirectoryName, 0777, true);
 			}
-			symlink(
-				$sFullTarget,
-				$oLine->getSymlink()
-			);
+			if (!is_link($oLine->getSymlink())) {
+				symlink(
+					$sFullTarget,
+					$oLine->getSymlink()
+				);
+			}
+		}
+
+		foreach ($this->oReader->getShells() as $sShell) {
+			$sShell = str_replace('rm -rf', 'deltree', $sShell);
+			$sShell = str_replace('$MODULE', $sTarget, $sShell);
+			$sShell = str_replace('$PROJECT', getcwd(), $sShell);
+			system($sShell);
 		}
 	}
 }
@@ -360,7 +379,6 @@ class Modman_Module_Symlink {
 		$sTarget = realpath($sModmanModuleSymlink);
 		return $sTarget;
 	}
-
 }
 
 class Modman_Command_Clean {
