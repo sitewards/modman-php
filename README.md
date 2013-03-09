@@ -9,6 +9,7 @@ Currently implemented:
  - deploy <module> (update symlinks)
  - deploy-all (updates all modules)
  - repair (repairs all symlinks)
+ - clean (removes all dead symlinks)
 
  --force is available for link, deploy and deploy-all, if not set script aborts when conflicts are found
 

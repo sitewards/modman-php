@@ -33,6 +33,10 @@ class Modman {
 					$oDeployAll = new Modman_Command_All('Modman_Command_Deploy');
 					$oDeployAll->doDeploy($bForce);
 					break;
+				case 'clean':
+					$oClean = new Modman_Command_Clean();
+					$oClean->doClean();
+					break;
 				default:
 					throw new Exception('command does not exist');
 			}
@@ -53,6 +57,7 @@ Following general commands are currently supported:
 - repair
 - deploy (with or without --force)
 - deploy-all (with or without --force)
+- clean
 
 Currently supported in modman-files:
 - symlinks
@@ -323,8 +328,37 @@ class Modman_Command_Deploy {
 	}
 }
 
-class Modman_Command_Status {
+class Modman_Command_Clean {
+	private $aDeadSymlinks = array();
 
+	public function doClean() {
+		foreach ($this->getDeadSymlinks() as $sSymlink) {
+			echo 'Remove ' . $sSymlink . '.' . PHP_EOL;
+			unlink($sSymlink);
+		}
+	}
+
+	private function getDeadSymlinks($sDirectory = NULL) {
+		if (is_null($sDirectory)) {
+			$sDirectory = getcwd();
+		}
+		$this->scanForDeadSymlinks($sDirectory);
+		return $this->aDeadSymlinks;
+	}
+
+	private function scanForDeadSymlinks($sDirectory) {
+		foreach (scandir($sDirectory) as $sFilename) {
+			if ($sFilename == '.' OR $sFilename == '..') {
+				continue;
+			}
+			$sFullFilename = $sDirectory . DIRECTORY_SEPARATOR . $sFilename;
+			if (is_dir($sFullFilename)) {
+				$this->scanForDeadSymlinks($sFullFilename);
+			} elseif (is_link($sFullFilename) AND !file_exists(realpath($sFullFilename))) {
+				$this->aDeadSymlinks[] = $sFullFilename;
+			}
+		}
+}
 }
 
 $oModman = new Modman();
