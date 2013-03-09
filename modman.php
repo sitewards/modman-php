@@ -153,6 +153,8 @@ class Modman_Command_Link_Line {
 
 class Modman_Reader {
 	private $aFileContent = array();
+	private $aObjects = array();
+	private $sClassName;
 
 	public function __construct($sDirectory) {
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
@@ -163,7 +165,7 @@ class Modman_Reader {
 	}
 
 	public function getObjectsPerRow($sClassName) {
-		$aObjects = array();
+		$this->sClassName = $sClassName;
 		foreach ($this->aFileContent as $sLine) {
 			if (substr($sLine, 0, 1) == '#') {
 				// skip comments
@@ -172,21 +174,26 @@ class Modman_Reader {
 			if (substr($sLine, 0, 7) == '@import') {
 				$this->doImport($this->getParamsArray($sLine));
 				continue;
+			} elseif (substr($sLine, 0, 1) == '@'){
+				continue;
 			}
 			$aParameters = $this->getParamsArray($sLine);
-			$aObjects[] = new $sClassName($aParameters);
+			$this->aObjects[] = new $sClassName($aParameters);
 		}
-		return $aObjects;
+		return $this->aObjects;
 	}
 
 	private function doImport($aCommandParams){
-		$aImportParams = array(
-			1 => 'link',
-			// path to imported module
-			2 => $aCommandParams[1]);
 
-		$oModman = new Modman();
-		$oModman->run($aImportParams);
+		$sDirectoryName = realpath($aCommandParams[1]);
+		if (!$sDirectoryName){
+			throw new Exception('The import path could not be parsed!');
+		}
+
+		$oModmanReader = new Modman_Reader($sDirectoryName);
+		$aObjects = $oModmanReader->getObjectsPerRow($this->sClassName);
+
+		$this->aObjects = array_merge($this->aObjects, $aObjects);
 	}
 
 }
@@ -194,7 +201,7 @@ class Modman_Reader {
 class Modman_Reader_Conflicts {
 	private $aConflicts = array();
 
-	public function checkForConflict($sSymlink, $sType, $sTarget) {
+	public function checkForConflict($sSymlink, $sType, $sTarget = false) {
 		if (file_exists($sSymlink)) {
 			if (is_dir($sSymlink)) {
 				if ($sType == 'dir') {
@@ -272,11 +279,9 @@ class Modman_Command_Deploy {
 	}
 
 	public function doDeploy($bForce = false) {
-		$sModmanModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $this->sModuleName;
-		if (!is_link($sModmanModuleSymlink)) {
-			throw new Exception($this->sModuleName . ' is not linked');
-		}
-		$sTarget = realpath($sModmanModuleSymlink);
+		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
+		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
+
 		$this->oReader = new Modman_Reader($sTarget);
 		$aLines = $this->oReader->getObjectsPerRow('Modman_Command_Link_Line');
 		$oConflicts = new Modman_Reader_Conflicts();
@@ -285,7 +290,7 @@ class Modman_Command_Deploy {
 			if ($oLine->getTarget() AND $oLine->getSymlink()) {
 				$sDirectoryName = $oLine->getSymlinkBaseDir();
 				if (!is_dir($sDirectoryName)) {
-					$this->checkForConflicts($sDirectoryName, 'dir');
+					$oConflicts->checkForConflict($sDirectoryName, 'dir');
 				}
 				$oConflicts->checkForConflict($oLine->getSymlink(), 'link', $oLine->getTarget());
 			} else {
@@ -307,6 +312,12 @@ class Modman_Command_Deploy {
 		}
 		foreach ($aLines as $oLine) {
 			/* @var $oLine Modman_Command_Link_Line */
+			$sFullTarget = $sTarget .
+				DIRECTORY_SEPARATOR .
+				$oLine->getTarget();
+			if (!file_exists($sFullTarget)) {
+				throw new Exception('can not link to non-existing file ' . $sFullTarget);
+			}
 			// create directories if path does not exist
 			$sDirectoryName = $oLine->getSymlinkBaseDir();
 			if (!is_dir($sDirectoryName)) {
@@ -314,13 +325,33 @@ class Modman_Command_Deploy {
 				mkdir($sDirectoryName, 0777, true);
 			}
 			symlink(
-				$sTarget .
-					DIRECTORY_SEPARATOR .
-					$oLine->getTarget(),
+				$sFullTarget,
 				$oLine->getSymlink()
 			);
 		}
 	}
+}
+
+
+class Modman_Module_Symlink {
+	private $sModuleName;
+
+	public function __construct($sModuleName){
+		if (empty($sModuleName)) {
+			throw new Exception('please provide a module name to deploy');
+		}
+		$this->sModuleName = $sModuleName;
+	}
+
+	public function getModmanModuleSymlinkPath(){
+		$sModmanModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $this->sModuleName;
+		if (!is_link($sModmanModuleSymlink)) {
+			throw new Exception($this->sModuleName . ' is not linked');
+		}
+		$sTarget = realpath($sModmanModuleSymlink);
+		return $sTarget;
+	}
+
 }
 
 class Modman_Command_Status {
