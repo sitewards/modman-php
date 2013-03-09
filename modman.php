@@ -137,6 +137,10 @@ class Modman_Reader {
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
 	}
 
+	private function getParamsArray($sRow){
+		return explode(' ', preg_replace('/\s+/', ' ', $sRow));
+	}
+
 	public function getObjectsPerRow($sClassName) {
 		$aObjects = array();
 		foreach ($this->aFileContent as $sLine) {
@@ -144,15 +148,26 @@ class Modman_Reader {
 				// skip comments
 				continue;
 			}
-			if (substr($sLine, 0, 1) == '@') {
-				// skip commmmands for now
+			if (substr($sLine, 0, 7) == '@import') {
+				$this->doImport($this->getParamsArray($sLine));
 				continue;
 			}
-			$aParameters = explode(' ', preg_replace('/\s+/', ' ', $sLine));
+			$aParameters = $this->getParamsArray($sLine);
 			$aObjects[] = new $sClassName($aParameters);
 		}
 		return $aObjects;
 	}
+
+	private function doImport($aCommandParams){
+		$aImportParams = array(
+			1 => 'link',
+			// path to imported module
+			2 => $aCommandParams[1]);
+
+		$oModman = new Modman();
+		$oModman->run($aImportParams);
+	}
+
 }
 
 class Modman_Reader_Conflicts {
