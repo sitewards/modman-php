@@ -11,7 +11,11 @@ class Modman {
 			// TODO force parameter
 			switch ($aParameters[1]) {
 				case 'link':
-					$oLink = new Modman_Command_Link(getcwd() . DIRECTORY_SEPARATOR . $aParameters[2]);
+					$sLinkPath = realpath($aParameters[2]);
+					if (!$sLinkPath){
+						throw new Exception('Link path is invalid!');
+					}
+					$oLink = new Modman_Command_Link($sLinkPath);
 					$oLink->createSymlinks();
 					break;
 				case 'init':
@@ -143,7 +147,7 @@ class Modman_Command_Deploy {
 				if (!is_dir($sDirectoryName)) {
 					$this->removeConflicts($sDirectoryName);
 					echo 'Create directory ' . $sDirectoryName . PHP_EOL;
-					mkdir($sDirectoryName);
+					mkdir($sDirectoryName, 0777, true);
 				}
 				$this->removeConflicts($oLine->getSymlink());
 				symlink(
