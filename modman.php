@@ -37,6 +37,10 @@ class Modman {
 					$oClean = new Modman_Command_Clean();
 					$oClean->doClean();
 					break;
+				case 'remove':
+					$oRemove = new Modman_Command_Remove($aParameters[2]);
+					$oRemove->doRemove($bForce);
+					break;
 				default:
 					throw new Exception('command does not exist');
 			}
@@ -389,7 +393,42 @@ class Modman_Command_Clean {
 				$this->aDeadSymlinks[] = $sFullFilename;
 			}
 		}
+	}
 }
+
+class Modman_Command_Remove {
+
+	public function __construct($sModuleName) {
+		if (empty($sModuleName)) {
+			throw new Exception('please provide a module name to deploy');
+		}
+		$this->sModuleName = $sModuleName;
+	}
+
+	public function doRemove($bForce = false){
+		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
+		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
+
+		$this->oReader = new Modman_Reader($sTarget);
+		$aLines = $this->oReader->getObjectsPerRow('Modman_Command_Link_Line');
+
+		foreach ($aLines as $oLine) {
+			$sOriginalPath = $oLine->getTarget();
+			$sLinkPath = $oLine->getSymlink();
+			if (is_link(getcwd() . DIRECTORY_SEPARATOR . $sLinkPath)
+				&& file_exists($sTarget . DIRECTORY_SEPARATOR . $sOriginalPath)){
+				/*
+				echo getcwd();
+				echo "\n";
+				echo $sLinkPath;
+				echo "\n";
+				echo $sTarget . DIRECTORY_SEPARATOR . $sOriginalPath;
+				echo "\n-----\n";
+				*/
+				unlink(getcwd() . DIRECTORY_SEPARATOR . $sLinkPath);
+			}
+		}
+	}
 }
 
 $oModman = new Modman();
