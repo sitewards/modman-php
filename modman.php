@@ -41,31 +41,32 @@ class Modman_Command_Init {
 }
 
 class Modman_Command_Link {
-	private $sSourceDirectory;
+	private $sTarget;
 	private $oReader;
 
-	public function __construct($sSourceDirectory) {
-		if (empty($sSourceDirectory)) {
+	public function __construct($sTarget) {
+		if (empty($sTarget)) {
 			throw new Exception('no source defined');
 		}
-		$this->sSourceDirectory = $sSourceDirectory;
-		$this->oReader = new Modman_Reader($sSourceDirectory);
+		$this->sTarget = $sTarget;
+		$this->oReader = new Modman_Reader($sTarget);
 	}
 
 	public function createSymlinks() {
 		foreach ($this->oReader->getObjectsPerRow('Modman_Command_Link_Line') as $oLine) {
 			/* @var $oLine Modman_Command_Link_Line */
-			if ($oLine->getSourceDirectory() AND $oLine->getTargetDirectory()) {
+			if ($oLine->getTarget() AND $oLine->getSymlink()) {
 				// create directories if path does not exist
-				if (!is_dir(dirname($oLine->getTargetDirectory()))) {
-					mkdir(dirname($oLine->getTargetDirectory()));
+				$sDirectoryName = dirname($oLine->getSymlink());
+				if (!is_dir($sDirectoryName)) {
+					mkdir($sDirectoryName);
 				}
-				// TODO check if link already exists, send warning, when changing links, removing empty files
+				// TODO check if link already exists, send warning, when changing links, removing old files
 				symlink(
-					$this->sSourceDirectory .
+					$this->sTarget .
 						DIRECTORY_SEPARATOR .
-						$oLine->getSourceDirectory(),
-					$oLine->getTargetDirectory()
+						$oLine->getTarget(),
+					$oLine->getSymlink()
 				);
 			}
 		}
@@ -74,23 +75,23 @@ class Modman_Command_Link {
 }
 
 class Modman_Command_Link_Line {
-	private $sSourceDirectory, $sTargetDirectory;
+	private $sTarget, $sSymlink;
 
 	public function __construct($aDirectories) {
-		$this->sSourceDirectory = $aDirectories[0];
+		$this->sTarget = $aDirectories[0];
 		if (empty($aDirectories[1])) {
-			$this->sTargetDirectory = $this->sSourceDirectory;
+			$this->sSymlink = $this->sTarget;
 		} else {
-			$this->sTargetDirectory = $aDirectories[1];
+			$this->sSymlink = $aDirectories[1];
 		}
 	}
 
-	public function getSourceDirectory() {
-		return $this->sSourceDirectory;
+	public function getTarget() {
+		return $this->sTarget;
 	}
 
-	public function getTargetDirectory() {
-		return $this->sTargetDirectory;
+	public function getSymlink() {
+		return $this->sSymlink;
 	}
 }
 
