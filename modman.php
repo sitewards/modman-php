@@ -27,6 +27,8 @@ class Modman {
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
 					$oDeploy->doDeploy($bForce);
 					break;
+				case 'repair':
+					$bForce = true;
 				case 'deploy-all':
 					$oDeployAll = new Modman_Command_All('Modman_Command_Deploy');
 					$oDeployAll->doDeploy($bForce);
