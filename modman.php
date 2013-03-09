@@ -8,6 +8,7 @@ class Modman {
 				throw new Exception('command not found');
 			}
 
+			// TODO force parameter
 			switch ($aParameters[1]) {
 				case 'link':
 					$oLink = new Modman_Command_Link(getcwd() . DIRECTORY_SEPARATOR . $aParameters[2]);
@@ -16,6 +17,10 @@ class Modman {
 				case 'init':
 					$oInit = new Modman_Command_Init();
 					$oInit->doInit();
+					break;
+				case 'deploy':
+					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
+					$oDeploy->doDeploy();
 					break;
 				default:
 					throw new Exception('command does not exist');
@@ -46,59 +51,24 @@ class Modman_Command_Init {
 
 class Modman_Command_Link {
 	private $sTarget;
-	private $oReader;
 
 	public function __construct($sTarget) {
 		if (empty($sTarget)) {
 			throw new Exception('no source defined');
 		}
 		$this->sTarget = $sTarget;
-		$this->oReader = new Modman_Reader($sTarget);
 	}
 
 	public function createSymlinks() {
-		foreach ($this->oReader->getObjectsPerRow('Modman_Command_Link_Line') as $oLine) {
-			/* @var $oLine Modman_Command_Link_Line */
-			if ($oLine->getTarget() AND $oLine->getSymlink()) {
-				// create directories if path does not exist
-				$sDirectoryName = dirname($oLine->getSymlink());
-				if (!is_dir($sDirectoryName)) {
-					$this->removeConflicts($sDirectoryName);
-					echo 'Create directory ' . $sDirectoryName . PHP_EOL;
-					mkdir($sDirectoryName);
-				}
-				$this->removeConflicts($oLine->getSymlink());
-				symlink(
-					$this->sTarget .
-						DIRECTORY_SEPARATOR .
-						$oLine->getTarget(),
-					$oLine->getSymlink()
-				);
-			}
+		$sModuleName = basename($this->sTarget);
+		$sModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $sModuleName;
+		if (is_link($sModuleSymlink)) {
+			throw new Exception($sModuleName . ' is already linked');
 		}
-	}
+		symlink($this->sTarget, $sModuleSymlink);
 
-	private function removeConflicts($sFileToClean) {
-		if (file_exists($sFileToClean)) {
-			if (is_dir($sFileToClean)) {
-				echo 'Remove conflicted directory ' . $sFileToClean . PHP_EOL;
-				$this->delTree($sFileToClean);
-			} else {
-				echo 'Remove conflicted file ' . $sFileToClean . PHP_EOL;
-				unlink($sFileToClean);
-			}
-		} elseif (is_link($sFileToClean)) {
-			echo 'Remove conflicted symlink ' . $sFileToClean . PHP_EOL;
-			unlink($sFileToClean);
-		}
-	}
-
-	private function delTree($sDirectory) {
-		$aFiles = array_diff(scandir($sDirectory), array('.','..'));
-		foreach ($aFiles as $sFile) {
-			(is_dir("$sDirectory/$sFile")) ? $this->delTree("$sDirectory/$sFile") : unlink("$sDirectory/$sFile");
-		}
-		return rmdir($sDirectory);
+		$oDeploy = new Modman_Command_Deploy($sModuleName);
+		$oDeploy->doDeploy();
 	}
 }
 
@@ -145,6 +115,68 @@ class Modman_Reader {
 			$aObjects[] = new $sClassName($aParameters);
 		}
 		return $aObjects;
+	}
+}
+
+class Modman_Command_Deploy {
+	private $sModuleName;
+
+	public function __construct($sModuleName) {
+		if (empty($sModuleName)) {
+			throw new Exception('please provide a module name to deploy');
+		}
+		$this->sModuleName = $sModuleName;
+	}
+
+	public function doDeploy() {
+		$sModmanModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $this->sModuleName;
+		if (!is_link($sModmanModuleSymlink)) {
+			throw new Exception($this->sModuleName . ' is not linked');
+		}
+		$sTarget = realpath($sModmanModuleSymlink);
+		$this->oReader = new Modman_Reader($sTarget);
+		foreach ($this->oReader->getObjectsPerRow('Modman_Command_Link_Line') as $oLine) {
+			/* @var $oLine Modman_Command_Link_Line */
+			if ($oLine->getTarget() AND $oLine->getSymlink()) {
+				// create directories if path does not exist
+				$sDirectoryName = dirname($oLine->getSymlink());
+				if (!is_dir($sDirectoryName)) {
+					$this->removeConflicts($sDirectoryName);
+					echo 'Create directory ' . $sDirectoryName . PHP_EOL;
+					mkdir($sDirectoryName);
+				}
+				$this->removeConflicts($oLine->getSymlink());
+				symlink(
+					$sTarget .
+						DIRECTORY_SEPARATOR .
+						$oLine->getTarget(),
+					$oLine->getSymlink()
+				);
+			}
+		}
+	}
+
+	private function removeConflicts($sFileToClean) {
+		if (file_exists($sFileToClean)) {
+			if (is_dir($sFileToClean)) {
+				echo 'Remove conflicted directory ' . $sFileToClean . PHP_EOL;
+				$this->delTree($sFileToClean);
+			} else {
+				echo 'Remove conflicted file ' . $sFileToClean . PHP_EOL;
+				unlink($sFileToClean);
+			}
+		} elseif (is_link($sFileToClean)) {
+			echo 'Remove conflicted symlink ' . $sFileToClean . PHP_EOL;
+			unlink($sFileToClean);
+		}
+	}
+
+	private function delTree($sDirectory) {
+		$aFiles = array_diff(scandir($sDirectory), array('.','..'));
+		foreach ($aFiles as $sFile) {
+			(is_dir("$sDirectory/$sFile")) ? $this->delTree("$sDirectory/$sFile") : unlink("$sDirectory/$sFile");
+		}
+		return rmdir($sDirectory);
 	}
 }
 
