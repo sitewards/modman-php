@@ -14,6 +14,8 @@ class Modman {
 
 				break;
 			case 'init':
+				$oInit = new Modman_Command_Init();
+				$oInit->doInit();
 				break;
 			default:
 				throw new Exception('command does not exist');
@@ -24,6 +26,19 @@ class Modman {
 
 class Modman_Command_Init {
 
+	// directory name
+	const MODMAN_DIRECTORY_NAME = '.modman';
+
+	/**
+	 * Creates directory ".modman" if it doesn't exist
+	 */
+	public function doInit(){
+		$sCurrentDirectory = getcwd();
+		$sModmanDirectory = $sCurrentDirectory . DIRECTORY_SEPARATOR . self::MODMAN_DIRECTORY_NAME;
+		if (!is_dir($sModmanDirectory)){
+			mkdir($sModmanDirectory);
+		}
+	}
 }
 
 class Modman_Command_Link {
