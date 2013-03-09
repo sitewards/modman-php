@@ -339,7 +339,7 @@ class Modman_Command_Deploy {
 				echo 'Create directory ' . $sDirectoryName . PHP_EOL;
 				mkdir($sDirectoryName, 0777, true);
 			}
-		if (!is_link($oLine->getSymlink())) {
+			if (!is_link($oLine->getSymlink())) {
 				symlink(
 					$sFullTarget,
 					$oLine->getSymlink()
@@ -375,7 +375,6 @@ class Modman_Module_Symlink {
 		$sTarget = realpath($sModmanModuleSymlink);
 		return $sTarget;
 	}
-
 }
 
 class Modman_Command_Clean {
