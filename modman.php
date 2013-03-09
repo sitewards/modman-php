@@ -11,7 +11,6 @@ class Modman {
 			case 'link':
 				$oLink = new Modman_Command_Link($aParameters[2]);
 				$oLink->createSymlinks();
-
 				break;
 			case 'init':
 				break;
@@ -33,9 +32,9 @@ class Modman_Command_Link {
 		}
 		$oReader = new Modman_Reader($sSourceDirectory);
 		foreach ($oReader->getObjectsPerRow('Modman_Command_Link_Line') as $oLine) {
-			
+			/* @var $oLine Modman_Command_Link_Line */
+			symlink($sSourceDirectory . DIRECTORY_SEPARATOR . $oLine->getSourceDirectory(), $oLine->getTargetDirectory());
 		}
-
 	}
 }
 
@@ -60,13 +59,21 @@ class Modman_Reader {
 	private $aFileContent = array();
 
 	public function __construct($sDirectory) {
-		$this->aFileContent = file($sDirectory . PATH_SEPARATOR . 'modman');
+		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
 	}
 
 	public function getObjectsPerRow($sClassName) {
 		$aObjects = array();
 		foreach ($this->aFileContent as $sLine) {
-			$aObjects[] = new $sClassName(explode(' ', $sLine));
+			if (substr($sLine, 0, 1) == '#') {
+				// skip comments
+				continue;
+			}
+			if (substr($sLine, 0, 1) == '@') {
+				// skip commmmands for now
+				continue;
+			}
+			$aObjects[] = new $sClassName(explode(' ', preg_replace('/\s+/', ' ', $sLine)));
 		}
 		return $aObjects;
 	}
