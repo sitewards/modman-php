@@ -9,7 +9,7 @@ class Modman {
 
 		switch ($aParameters[1]) {
 			case 'link':
-				$oLink = new Modman_Command_Link($aParameters[2]);
+				$oLink = new Modman_Command_Link(getcwd() . DIRECTORY_SEPARATOR . $aParameters[2]);
 				$oLink->createSymlinks();
 				break;
 			case 'init':
@@ -41,15 +41,35 @@ class Modman_Command_Init {
 }
 
 class Modman_Command_Link {
+	private $sSourceDirectory;
+	private $oReader;
+
 	public function __construct($sSourceDirectory) {
 		if (empty($sSourceDirectory)) {
 			throw new Exception('no source defined');
 		}
-		$oReader = new Modman_Reader($sSourceDirectory);
-		foreach ($oReader->getObjectsPerRow('Modman_Command_Link_Line') as $oLine) {
+		$this->sSourceDirectory = $sSourceDirectory;
+		$this->oReader = new Modman_Reader($sSourceDirectory);
+	}
+
+	public function createSymlinks() {
+		foreach ($this->oReader->getObjectsPerRow('Modman_Command_Link_Line') as $oLine) {
 			/* @var $oLine Modman_Command_Link_Line */
-			symlink($sSourceDirectory . DIRECTORY_SEPARATOR . $oLine->getSourceDirectory(), $oLine->getTargetDirectory());
+			if ($oLine->getSourceDirectory() AND $oLine->getTargetDirectory()) {
+				// create directories if path does not exist
+				if (!is_dir(dirname($oLine->getTargetDirectory()))) {
+					mkdir(dirname($oLine->getTargetDirectory()));
+				}
+				// TODO check if link already exists, send warning, when changing links, removing empty files
+				symlink(
+					$this->sSourceDirectory .
+						DIRECTORY_SEPARATOR .
+						$oLine->getSourceDirectory(),
+					$oLine->getTargetDirectory()
+				);
+			}
 		}
+
 	}
 }
 
@@ -58,7 +78,11 @@ class Modman_Command_Link_Line {
 
 	public function __construct($aDirectories) {
 		$this->sSourceDirectory = $aDirectories[0];
-		$this->sTargetDirectory = $aDirectories[1];
+		if (empty($aDirectories[1])) {
+			$this->sTargetDirectory = $this->sSourceDirectory;
+		} else {
+			$this->sTargetDirectory = $aDirectories[1];
+		}
 	}
 
 	public function getSourceDirectory() {
@@ -88,7 +112,8 @@ class Modman_Reader {
 				// skip commmmands for now
 				continue;
 			}
-			$aObjects[] = new $sClassName(explode(' ', preg_replace('/\s+/', ' ', $sLine)));
+			$aParameters = explode(' ', preg_replace('/\s+/', ' ', $sLine));
+			$aObjects[] = new $sClassName($aParameters);
 		}
 		return $aObjects;
 	}
