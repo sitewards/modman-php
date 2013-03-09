@@ -27,12 +27,38 @@ class Modman {
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
 					$oDeploy->doDeploy($bForce);
 					break;
+				case 'deploy-all':
+					$oDeployAll = new Modman_Command_All('Modman_Command_Deploy');
+					$oDeployAll->doDeploy($bForce);
+					break;
 				default:
 					throw new Exception('command does not exist');
 			}
 		} catch (Exception $oException) {
 			echo 'An error occured:' . PHP_EOL;
 			echo $oException->getMessage();
+		}
+	}
+}
+
+class Modman_Command_All {
+	private $sClassName;
+
+	public function __construct($sClassName) {
+		$this->sClassName = $sClassName;
+	}
+
+	private function getAllModules() {
+		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
+		unset($aDirEntries[array_search('.', $aDirEntries)]);
+		unset($aDirEntries[array_search('..', $aDirEntries)]);
+		return $aDirEntries;
+	}
+
+	public function __call($sMethodName, $aArguments) {
+		foreach ($this->getAllModules() as $sModuleName) {
+			$oClass = new $this->sClassName($sModuleName);
+			$oClass->$sMethodName(current($aArguments));
 		}
 	}
 }
