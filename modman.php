@@ -265,6 +265,7 @@ class Modman_Reader_Conflicts {
 	}
 
 	public function cleanup() {
+		$oResourceRemover = new Modman_Resource_Remover();
 		foreach ($this->aConflicts as $sFilename => $sType) {
 			switch ($sType) {
 				case 'dir':
@@ -272,7 +273,7 @@ class Modman_Reader_Conflicts {
 					break;
 				case 'file':
 				case 'link':
-					unlink($sFilename);
+					$oResourceRemover->doRemoveResource($sFilename);
 					break;
 			}
 		}
@@ -280,8 +281,11 @@ class Modman_Reader_Conflicts {
 
 	private function delTree($sDirectory) {
 		$aFiles = array_diff(scandir($sDirectory), array('.','..'));
+		$oResourceRemover = new Modman_Resource_Remover();
 		foreach ($aFiles as $sFile) {
-			(is_dir("$sDirectory/$sFile")) ? $this->delTree("$sDirectory/$sFile") : unlink("$sDirectory/$sFile");
+			(is_dir("$sDirectory/$sFile"))
+				? $this->delTree("$sDirectory/$sFile")
+				: $oResourceRemover->doRemoveResource("$sDirectory/$sFile");
 		}
 		return rmdir($sDirectory);
 	}
@@ -371,8 +375,13 @@ class Modman_Module_Symlink {
 		$this->sModuleName = $sModuleName;
 	}
 
-	public function getModmanModuleSymlinkPath(){
+	public function getModmanModuleSymlink(){
 		$sModmanModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $this->sModuleName;
+		return $sModmanModuleSymlink;
+	}
+
+	public function getModmanModuleSymlinkPath(){
+		$sModmanModuleSymlink = $this->getModmanModuleSymlink();
 		if (!is_link($sModmanModuleSymlink)) {
 			throw new Exception($this->sModuleName . ' is not linked');
 		}
@@ -385,9 +394,10 @@ class Modman_Command_Clean {
 	private $aDeadSymlinks = array();
 
 	public function doClean() {
+		$oResourceRemover = new Modman_Resource_Remover();
 		foreach ($this->getDeadSymlinks() as $sSymlink) {
 			echo 'Remove ' . $sSymlink . '.' . PHP_EOL;
-			unlink($sSymlink);
+			$oResourceRemover->doRemoveResource($sSymlink);
 		}
 	}
 
@@ -430,23 +440,42 @@ class Modman_Command_Remove {
 		$this->oReader = new Modman_Reader($sTarget);
 		$aLines = $this->oReader->getObjectsPerRow('Modman_Command_Link_Line');
 
+		$oResourceRemover = new Modman_Resource_Remover();
+
 		foreach ($aLines as $oLine) {
 			$sOriginalPath = $oLine->getTarget();
 			$sLinkPath = $oLine->getSymlink();
-			if (is_link(getcwd() . DIRECTORY_SEPARATOR . $sLinkPath)
+			$sSymlinkPath = getcwd() . DIRECTORY_SEPARATOR . $sLinkPath;
+			if (is_link($sSymlinkPath)
 				&& file_exists($sTarget . DIRECTORY_SEPARATOR . $sOriginalPath)){
-				/*
-				echo getcwd();
-				echo "\n";
-				echo $sLinkPath;
-				echo "\n";
-				echo $sTarget . DIRECTORY_SEPARATOR . $sOriginalPath;
-				echo "\n-----\n";
-				*/
-				unlink(getcwd() . DIRECTORY_SEPARATOR . $sLinkPath);
+
+				if (is_link($sSymlinkPath)){
+					$oResourceRemover->doRemoveResource($sSymlinkPath);
+				} elseif ($bForce){
+					$oResourceRemover->doRemoveResource($sSymlinkPath);
+				} else {
+					throw new Exception('Problem with removing ' . $sSymlinkPath .
+							' - use --force'
+					);
+				}
 			}
 		}
+
+		$oResourceRemover->doRemoveResource($oModmanModuleSymlink->getModmanModuleSymlink());
+
 	}
+}
+
+class Modman_Resource_Remover{
+
+	public function doRemoveResource($sSymlinkPath){
+		if (is_dir($sSymlinkPath)){
+			rmdir($sSymlinkPath);
+		} else if (is_file($sSymlinkPath)){
+			unlink($sSymlinkPath);
+		}
+	}
+
 }
 
 $oModman = new Modman();
