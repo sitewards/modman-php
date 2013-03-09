@@ -59,9 +59,11 @@ class Modman_Command_Link {
 				// create directories if path does not exist
 				$sDirectoryName = dirname($oLine->getSymlink());
 				if (!is_dir($sDirectoryName)) {
+					$this->removeConflicts($sDirectoryName);
+					echo 'Create directory ' . $sDirectoryName . PHP_EOL;
 					mkdir($sDirectoryName);
 				}
-				// TODO check if link already exists, send warning, when changing links, removing old files
+				$this->removeConflicts($oLine->getSymlink());
 				symlink(
 					$this->sTarget .
 						DIRECTORY_SEPARATOR .
@@ -70,7 +72,29 @@ class Modman_Command_Link {
 				);
 			}
 		}
+	}
 
+	private function removeConflicts($sFileToClean) {
+		if (file_exists($sFileToClean)) {
+			if (is_dir($sFileToClean)) {
+				echo 'Remove conflicted directory ' . $sFileToClean . PHP_EOL;
+				$this->delTree($sFileToClean);
+			} else {
+				echo 'Remove conflicted file ' . $sFileToClean . PHP_EOL;
+				unlink($sFileToClean);
+			}
+		} elseif (is_link($sFileToClean)) {
+			echo 'Remove conflicted symlink ' . $sFileToClean . PHP_EOL;
+			unlink($sFileToClean);
+		}
+	}
+
+	private function delTree($sDirectory) {
+		$aFiles = array_diff(scandir($sDirectory), array('.','..'));
+		foreach ($aFiles as $sFile) {
+			(is_dir("$sDirectory/$sFile")) ? $this->delTree("$sDirectory/$sFile") : unlink("$sDirectory/$sFile");
+		}
+		return rmdir($sDirectory);
 	}
 }
 
