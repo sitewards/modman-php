@@ -9,6 +9,7 @@ Currently implemented:
  - deploy <module> (update symlinks)
  - deploy-all (updates all modules)
  - repair (repairs all symlinks)
+ - clean (removes all dead symlinks)
 
  --force is available for link, deploy and deploy-all, if not set script aborts when conflicts are found
 
@@ -19,7 +20,10 @@ Usage examples:
     php modman.php deploy B2BProfessional
 
 
- Started at Magento Hackathon in Zürich 2013-03-09
+VCS integration is postponed, because there are great clients out there, so we don't use it in modman anyway.
 
 
- Influenced by the original modman at https://github.com/colinmollenhour/modman/
+Started at Magento Hackathon in Zürich 2013-03-09
+
+
+Influenced by the original modman at https://github.com/colinmollenhour/modman/
