@@ -3,23 +3,27 @@
 
 class Modman {
 	public function run($aParameters) {
-		if (!isset($aParameters[1])) {
-			throw new Exception('command not found');
-		}
+		try {
+			if (!isset($aParameters[1])) {
+				throw new Exception('command not found');
+			}
 
-		switch ($aParameters[1]) {
-			case 'link':
-				$oLink = new Modman_Command_Link(getcwd() . DIRECTORY_SEPARATOR . $aParameters[2]);
-				$oLink->createSymlinks();
-				break;
-			case 'init':
-				$oInit = new Modman_Command_Init();
-				$oInit->doInit();
-				break;
-			default:
-				throw new Exception('command does not exist');
+			switch ($aParameters[1]) {
+				case 'link':
+					$oLink = new Modman_Command_Link(getcwd() . DIRECTORY_SEPARATOR . $aParameters[2]);
+					$oLink->createSymlinks();
+					break;
+				case 'init':
+					$oInit = new Modman_Command_Init();
+					$oInit->doInit();
+					break;
+				default:
+					throw new Exception('command does not exist');
+			}
+		} catch (Exception $oException) {
+			echo 'An error occured:' . PHP_EOL;
+			echo $oException->getMessage();
 		}
-
 	}
 }
 
