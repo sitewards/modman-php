@@ -86,9 +86,10 @@ Following general commands are currently supported:
 - deploy (with or without --force)
 - deploy-all (with or without --force)
 - clean
+- create (with or without --force)
 
 Currently supported in modman-files:
-- symlinks
+- symlinks (with wildcards)
 - @import and @shell command
 EOH;
 
