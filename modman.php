@@ -1,5 +1,16 @@
 <?php
 class Modman {
+
+	/**
+	 * the .modman direcory is missing
+	 */
+	const ERR_NOT_INITIALIZED = 1;
+
+	/**
+	 * no modman file in the linked directory
+	 */
+	const ERR_NO_MODMAN_FILE = 2;
+
 	public function run($aParameters) {
 		try {
 			if (!isset($aParameters[1])) {
@@ -94,7 +105,7 @@ class Modman_Command_All {
 			echo "ERROR: No modman directory found. You need to call \"modman init\" to create it." . PHP_EOL;
 			echo "Please consider the documentation below." . PHP_EOL . PHP_EOL;
 			Modman::printHelp();
-			exit;
+			exit (Modman::ERR_NOT_INITIALIZED);
 		}
 		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
 		unset($aDirEntries[array_search('.', $aDirEntries)]);
@@ -182,7 +193,14 @@ class Modman_Reader {
 	private $aShells = array();
 
 	public function __construct($sDirectory) {
-		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
+		$sFileName = $sDirectory . DIRECTORY_SEPARATOR . 'modman';
+		if (!file_exists($sFileName)) {
+			echo "The directory you would like to link has no modman file." . PHP_EOL;
+			echo "Cannot link to this directory." . PHP_EOL . PHP_EOL;
+			Modman::printHelp();
+			exit(Modman::ERR_NO_MODMAN_FILE);
+		}
+		$this->aFileContent = file($sFileName);
 	}
 
 	private function getParamsArray($sRow){
