@@ -12,6 +12,9 @@ class Modman {
 
 			switch ($aParameters[1]) {
 				case 'link':
+					if (!isset($aParameters[2])) {
+						throw new Exception('please specify target directory');
+					}
 					$sLinkPath = realpath($aParameters[2]);
 					if (!$sLinkPath){
 						throw new Exception('Link path is invalid!');
@@ -24,6 +27,9 @@ class Modman {
 					$oInit->doInit();
 					break;
 				case 'deploy':
+					if (!isset($aParameters[2])) {
+						throw new Exception('please specify module name');
+					}
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
 					$oDeploy->doDeploy($bForce);
 					break;
@@ -38,6 +44,9 @@ class Modman {
 					$oClean->doClean();
 					break;
 				case 'remove':
+					if (!isset($aParameters[2])) {
+						throw new Exception('please specify module name');
+					}
 					$oRemove = new Modman_Command_Remove($aParameters[2]);
 					$oRemove->doRemove($bForce);
 					break;
