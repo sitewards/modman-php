@@ -10,6 +10,7 @@ Currently implemented:
  - deploy-all (updates all modules)
  - repair (repairs all symlinks)
  - clean (removes all dead symlinks)
+ - create (creates a modman file for an existing module)
 
  --force is available for link, deploy and deploy-all, if not set script aborts when conflicts are found
 
@@ -100,4 +101,13 @@ Removes links of a project
     cd $PROJECT
     modman remove myMageModule
 
-Optional parameter --force to automatically remove conflicted files
+create
+======
+
+Scans through the current directory and creates a modman file containing all files and folders
+
+    cd $MODULE
+    modman create
+	
+	
+Optional parameter --force to automatically overwrite existing modman-file
