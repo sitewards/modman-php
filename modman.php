@@ -4,7 +4,7 @@ class Modman {
 		try {
 			if (!isset($aParameters[1])) {
 				// show help if called without parameters
-				$this->printHelp();
+				self::printHelp();
 				exit;
 			}
 
@@ -59,7 +59,7 @@ class Modman {
 		}
 	}
 
-	private function printHelp(){
+	public static function printHelp(){
 		$sHelp = <<< EOH
 PHP-based module manager, originally implemented as bash-script
 (for original implementation see https://github.com/colinmollenhour/modman)
@@ -90,6 +90,12 @@ class Modman_Command_All {
 	}
 
 	private function getAllModules() {
+		if (!file_exists(Modman_Command_Init::MODMAN_DIRECTORY_NAME)) {
+			echo "ERROR: No modman directory found. You need to call \"modman init\" to create it." . PHP_EOL;
+			echo "Please consider the documentation below." . PHP_EOL . PHP_EOL;
+			Modman::printHelp();
+			exit;
+		}
 		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
 		unset($aDirEntries[array_search('.', $aDirEntries)]);
 		unset($aDirEntries[array_search('..', $aDirEntries)]);
