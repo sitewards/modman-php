@@ -24,6 +24,10 @@ Currently supported in modman files:
  - @import
  - @shell
 
+For Windows users there's also a batch file available, so instead of typing php and directory to modman.php you could just use modman.bat everywhere if you add it to your %PATH%-variable:
+
+    modman link c:\B2BProfessional
+
 
 VCS integration is postponed, because there are great clients out there, so we don't use it in modman anyway.
 

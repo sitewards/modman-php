@@ -1,0 +1,1 @@
+php %~dp0modman.php %2 %3
