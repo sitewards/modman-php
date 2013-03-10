@@ -1,10 +1,21 @@
 <?php
 class Modman {
+
+	/**
+	 * the .modman direcory is missing
+	 */
+	const ERR_NOT_INITIALIZED = 1;
+
+	/**
+	 * no modman file in the linked directory
+	 */
+	const ERR_NO_MODMAN_FILE = 2;
+
 	public function run($aParameters) {
 		try {
 			if (!isset($aParameters[1])) {
 				// show help if called without parameters
-				$this->printHelp();
+				self::printHelp();
 				exit;
 			}
 
@@ -12,6 +23,9 @@ class Modman {
 
 			switch ($aParameters[1]) {
 				case 'link':
+					if (!isset($aParameters[2])) {
+						throw new Exception('please specify target directory');
+					}
 					$sLinkPath = realpath($aParameters[2]);
 					if (!$sLinkPath){
 						throw new Exception('Link path is invalid!');
@@ -24,6 +38,9 @@ class Modman {
 					$oInit->doInit();
 					break;
 				case 'deploy':
+					if (!isset($aParameters[2])) {
+						throw new Exception('please specify module name');
+					}
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
 					$oDeploy->doDeploy($bForce);
 					break;
@@ -38,6 +55,9 @@ class Modman {
 					$oClean->doClean();
 					break;
 				case 'remove':
+					if (!isset($aParameters[2])) {
+						throw new Exception('please specify module name');
+					}
 					$oRemove = new Modman_Command_Remove($aParameters[2]);
 					$oRemove->doRemove($bForce);
 					break;
@@ -54,7 +74,7 @@ class Modman {
 		}
 	}
 
-	private function printHelp(){
+	public static function printHelp(){
 		$sHelp = <<< EOH
 PHP-based module manager, originally implemented as bash-script
 (for original implementation see https://github.com/colinmollenhour/modman)
@@ -72,7 +92,7 @@ Currently supported in modman-files:
 - @import and @shell command
 EOH;
 
-		echo $sHelp;
+		echo $sHelp . PHP_EOL;
 	}
 
 }
@@ -85,6 +105,12 @@ class Modman_Command_All {
 	}
 
 	private function getAllModules() {
+		if (!file_exists(Modman_Command_Init::MODMAN_DIRECTORY_NAME)) {
+			echo "ERROR: No modman directory found. You need to call \"modman init\" to create it." . PHP_EOL;
+			echo "Please consider the documentation below." . PHP_EOL . PHP_EOL;
+			Modman::printHelp();
+			exit (Modman::ERR_NOT_INITIALIZED);
+		}
 		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
 		unset($aDirEntries[array_search('.', $aDirEntries)]);
 		unset($aDirEntries[array_search('..', $aDirEntries)]);
@@ -175,6 +201,14 @@ class Modman_Reader {
 
 	public function __construct($sDirectory) {
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME);
+		$sFileName = $sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME;
+		if (!file_exists($sFileName)) {
+			echo "The directory you would like to link has no modman file." . PHP_EOL;
+			echo "Cannot link to this directory." . PHP_EOL . PHP_EOL;
+			Modman::printHelp();
+			exit(Modman::ERR_NO_MODMAN_FILE);
+		}
+		$this->aFileContent = file($sFileName);
 	}
 
 	private function getParamsArray($sRow){
@@ -363,7 +397,9 @@ class Modman_Command_Deploy {
 		}
 
 		foreach ($this->oReader->getShells() as $sShell) {
-			$sShell = str_replace('rm -rf', 'deltree', $sShell);
+			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+				$sShell = str_replace('rm -rf', 'deltree', $sShell);
+			}
 			$sShell = str_replace('$MODULE', $sTarget, $sShell);
 			$sShell = str_replace('$PROJECT', getcwd(), $sShell);
 			system($sShell);
