@@ -90,9 +90,10 @@ Following general commands are currently supported:
 - deploy (with or without --force)
 - deploy-all (with or without --force)
 - clean
+- create (with or without --force)
 
 Currently supported in modman-files:
-- symlinks
+- symlinks (with wildcards)
 - @import and @shell command
 EOH;
 
@@ -200,8 +201,10 @@ class Modman_Reader {
 	private $aObjects = array();
 	private $sClassName;
 	private $aShells = array();
+	private $sModuleDirectory;
 
 	public function __construct($sDirectory) {
+		$this->sModuleDirectory = $sDirectory;
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME);
 		$sFileName = $sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME;
 		if (!file_exists($sFileName)) {
@@ -234,7 +237,14 @@ class Modman_Reader {
 				echo 'Do not understand: ' . $sLine . PHP_EOL;
 				continue;
 			}
-			$this->aObjects[] = new $sClassName($aParameters);
+			if (strstr($sLine, '*')) {
+				foreach (glob($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aParameters[0]) as $sFilename) {
+					$sRelativeFilename = substr($sFilename, strlen($this->sModuleDirectory . DIRECTORY_SEPARATOR));
+					$this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeFilename));
+				}
+			} else {
+				$this->aObjects[] = new $sClassName($aParameters);
+			}
 		}
 		return $this->aObjects;
 	}
