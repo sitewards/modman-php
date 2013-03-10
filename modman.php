@@ -1,10 +1,21 @@
 <?php
 class Modman {
+
+	/**
+	 * the .modman direcory is missing
+	 */
+	const ERR_NOT_INITIALIZED = 1;
+
+	/**
+	 * no modman file in the linked directory
+	 */
+	const ERR_NO_MODMAN_FILE = 2;
+
 	public function run($aParameters) {
 		try {
 			if (!isset($aParameters[1])) {
 				// show help if called without parameters
-				$this->printHelp();
+				self::printHelp();
 				exit;
 			}
 
@@ -50,6 +61,10 @@ class Modman {
 					$oRemove = new Modman_Command_Remove($aParameters[2]);
 					$oRemove->doRemove($bForce);
 					break;
+				case 'create':
+					$oCreate = new Modman_Command_Create();
+					$oCreate->doCreate($bForce);
+					break;
 				default:
 					throw new Exception('command does not exist');
 			}
@@ -59,7 +74,7 @@ class Modman {
 		}
 	}
 
-	private function printHelp(){
+	public static function printHelp(){
 		$sHelp = <<< EOH
 PHP-based module manager, originally implemented as bash-script
 (for original implementation see https://github.com/colinmollenhour/modman)
@@ -90,6 +105,12 @@ class Modman_Command_All {
 	}
 
 	private function getAllModules() {
+		if (!file_exists(Modman_Command_Init::MODMAN_DIRECTORY_NAME)) {
+			echo "ERROR: No modman directory found. You need to call \"modman init\" to create it." . PHP_EOL;
+			echo "Please consider the documentation below." . PHP_EOL . PHP_EOL;
+			Modman::printHelp();
+			exit (Modman::ERR_NOT_INITIALIZED);
+		}
 		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
 		unset($aDirEntries[array_search('.', $aDirEntries)]);
 		unset($aDirEntries[array_search('..', $aDirEntries)]);
@@ -170,6 +191,9 @@ class Modman_Command_Link_Line {
 }
 
 class Modman_Reader {
+
+	const MODMAN_FILE_NAME = 'modman';
+
 	private $aFileContent = array();
 	private $aObjects = array();
 	private $sClassName;
@@ -178,7 +202,15 @@ class Modman_Reader {
 
 	public function __construct($sDirectory) {
 		$this->sModuleDirectory = $sDirectory;
-		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
+		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME);
+		$sFileName = $sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME;
+		if (!file_exists($sFileName)) {
+			echo "The directory you would like to link has no modman file." . PHP_EOL;
+			echo "Cannot link to this directory." . PHP_EOL . PHP_EOL;
+			Modman::printHelp();
+			exit(Modman::ERR_NO_MODMAN_FILE);
+		}
+		$this->aFileContent = file($sFileName);
 	}
 
 	private function getParamsArray($sRow){
@@ -483,6 +515,80 @@ class Modman_Command_Remove {
 
 		$oResourceRemover->doRemoveResource($oModmanModuleSymlink->getModmanModuleSymlink());
 
+	}
+}
+
+class Modman_Command_Create {
+
+	private $aLinks = array();
+
+	private function isDirectoryEmpty($sDirectoryPath){
+		$aCurrentDirectoryListing = scandir($sDirectoryPath);
+		return count($aCurrentDirectoryListing) <= 2;
+	}
+
+	private function getDirectoryStructure($sDirectoryPath){
+		$aResult = array();
+
+		$aCurrentDirectoryListing = scandir($sDirectoryPath);
+		foreach ($aCurrentDirectoryListing as $sNode){
+			if (!in_array($sNode, array(".",".."))){
+				$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
+				if (is_dir($sDirectoryPathToCheck)
+					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)){
+					$aResult[$sNode] = $this->getDirectoryStructure($sDirectoryPathToCheck);
+				} else {
+					$aResult[] = $sNode;
+				}
+			}
+		}
+		return $aResult;
+	}
+
+
+	private function generateLinkListFromDirectoryStructure($aDirectoryStructure, $aPathElements = array()){
+		foreach ($aDirectoryStructure as $sDirectory => $mElements){
+			if (!is_array($mElements)){
+					$this->aLinks[] = implode(DIRECTORY_SEPARATOR, $aPathElements) . DIRECTORY_SEPARATOR . $mElements;
+			} else {
+				$this->generateLinkListFromDirectoryStructure($mElements, array_merge($aPathElements, array($sDirectory)));
+			}
+		}
+	}
+
+	private function getModmanFilePath(){
+		return getcwd() . DIRECTORY_SEPARATOR . Modman_Reader::MODMAN_FILE_NAME;
+	}
+
+	private function existsModmanFile(){
+		return file_exists($this->getModmanFilePath());
+	}
+
+	private function generateModmanFile(){
+		if (file_exists($this->getModmanFilePath())){
+			unlink($this->getModmanFilePath());
+		}
+
+		$sOutput = '';
+		foreach ($this->aLinks as $sLink){
+			$sOutput .= $sLink . ' ' . $sLink . "\n";
+		}
+
+		$rModmanFile = fopen($this->getModmanFilePath(), 'w');
+		fputs($rModmanFile,$sOutput);
+		fclose($rModmanFile);
+
+	}
+
+	public function doCreate($bForce){
+		$aDirectoryStructure = $this->getDirectoryStructure(getcwd());
+		$this->generateLinkListFromDirectoryStructure($aDirectoryStructure);
+
+		if ($this->existsModmanFile() && !$bForce){
+			throw new Exception('modman file ' . $this->getModmanFilePath() . ' already exists. Use --force');
+		} else {
+			$this->generateModmanFile();
+		}
 	}
 }
 
