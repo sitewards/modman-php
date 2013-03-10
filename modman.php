@@ -365,7 +365,9 @@ class Modman_Command_Deploy {
 		}
 
 		foreach ($this->oReader->getShells() as $sShell) {
-			$sShell = str_replace('rm -rf', 'deltree', $sShell);
+			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+				$sShell = str_replace('rm -rf', 'deltree', $sShell);
+			}
 			$sShell = str_replace('$MODULE', $sTarget, $sShell);
 			$sShell = str_replace('$PROJECT', getcwd(), $sShell);
 			system($sShell);
