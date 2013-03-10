@@ -15,7 +15,7 @@ class Modman {
 		try {
 			if (!isset($aParameters[1])) {
 				// show help if called without parameters
-				self::printHelp();
+				$this->printHelp();
 				exit;
 			}
 
@@ -69,12 +69,16 @@ class Modman {
 					throw new Exception('command does not exist');
 			}
 		} catch (Exception $oException) {
+			echo '-----' . PHP_EOL;
 			echo 'An error occured:' . PHP_EOL;
-			echo $oException->getMessage();
+			echo $oException->getMessage() . PHP_EOL;
+			echo '-----';
+			echo PHP_EOL . PHP_EOL;
+			$this->printHelp();
 		}
 	}
 
-	public static function printHelp(){
+	public function printHelp(){
 		$sHelp = <<< EOH
 PHP-based module manager, originally implemented as bash-script
 (for original implementation see https://github.com/colinmollenhour/modman)
@@ -106,10 +110,8 @@ class Modman_Command_All {
 
 	private function getAllModules() {
 		if (!file_exists(Modman_Command_Init::MODMAN_DIRECTORY_NAME)) {
-			echo "ERROR: No modman directory found. You need to call \"modman init\" to create it." . PHP_EOL;
-			echo "Please consider the documentation below." . PHP_EOL . PHP_EOL;
-			Modman::printHelp();
-			exit (Modman::ERR_NOT_INITIALIZED);
+			throw new Exception ('No modman directory found. You need to call "modman init" to create it.' . PHP_EOL
+				. 'Please consider the documentation below.', Modman::ERR_NOT_INITIALIZED);
 		}
 		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
 		unset($aDirEntries[array_search('.', $aDirEntries)]);
@@ -203,10 +205,8 @@ class Modman_Reader {
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME);
 		$sFileName = $sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME;
 		if (!file_exists($sFileName)) {
-			echo "The directory you would like to link has no modman file." . PHP_EOL;
-			echo "Cannot link to this directory." . PHP_EOL . PHP_EOL;
-			Modman::printHelp();
-			exit(Modman::ERR_NO_MODMAN_FILE);
+			throw new Exception ('The directory you would like to link has no modman file.' . PHP_EOL
+			     . 'Cannot link to this directory.', Modman::ERR_NO_MODMAN_FILE);
 		}
 		$this->aFileContent = file($sFileName);
 	}
