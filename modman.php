@@ -174,8 +174,10 @@ class Modman_Reader {
 	private $aObjects = array();
 	private $sClassName;
 	private $aShells = array();
+	private $sModuleDirectory;
 
 	public function __construct($sDirectory) {
+		$this->sModuleDirectory = $sDirectory;
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . 'modman');
 	}
 
@@ -202,7 +204,14 @@ class Modman_Reader {
 				echo 'Do not understand: ' . $sLine . PHP_EOL;
 				continue;
 			}
-			$this->aObjects[] = new $sClassName($aParameters);
+			if (strstr($sLine, '*')) {
+				foreach (glob($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aParameters[0]) as $sFilename) {
+					$sRelativeFilename = substr($sFilename, strlen($this->sModuleDirectory . DIRECTORY_SEPARATOR));
+					$this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeFilename));
+				}
+			} else {
+				$this->aObjects[] = new $sClassName($aParameters);
+			}
 		}
 		return $this->aObjects;
 	}

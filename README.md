@@ -20,7 +20,7 @@ Usage examples:
     php modman.php deploy B2BProfessional
 
 Currently supported in modman files:
- - symlinks
+ - symlinks (incl. wildcards)
  - @import
  - @shell
 
