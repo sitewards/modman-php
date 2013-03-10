@@ -75,7 +75,7 @@ Optional parameter --force to automatically remove conflicted files
 repair
 ======
 
-Repairs all symlinks of a module
+Repairs all symlinks of all linked modules
 
     cd $PROJECT
     php modman.php repair
