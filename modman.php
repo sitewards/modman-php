@@ -77,7 +77,7 @@ Currently supported in modman-files:
 - @import and @shell command
 EOH;
 
-		echo $sHelp;
+		echo $sHelp . PHP_EOL;
 	}
 
 }
