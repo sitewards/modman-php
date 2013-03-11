@@ -32,6 +32,7 @@ class Modman {
 					}
 					$oLink = new Modman_Command_Link($sLinkPath);
 					$oLink->createSymlinks($bForce);
+					echo 'Successfully create symlink new module \'' . basename($sLinkPath) . '\'' . PHP_EOL;
 					break;
 				case 'init':
 					$oInit = new Modman_Command_Init();
@@ -43,6 +44,7 @@ class Modman {
 					}
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
 					$oDeploy->doDeploy($bForce);
+					echo $aParameters[2] . ' has been deployed under ' . getcwd() . PHP_EOL;
 					break;
 				case 'repair':
 					$bForce = true;
@@ -400,7 +402,7 @@ class Modman_Command_Deploy {
 				mkdir($sDirectoryName, 0777, true);
 			}
 			if (!is_link($oLine->getSymlink())) {
-				echo 'Create symlink ' . $oLine->getSymlink() . ' -> ' . $sFullTarget . PHP_EOL;
+				echo ' Applied: ' . $oLine->getSymlink() . ' ' . $sFullTarget . PHP_EOL;
 				symlink(
 					$sFullTarget,
 					$oLine->getSymlink()
