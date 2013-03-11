@@ -574,6 +574,10 @@ class Modman_Command_Create {
 
 		$sOutput = '';
 		foreach ($this->aLinks as $sLink){
+			$sLink = '/' . $sLink;
+			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+				$sLink = str_replace('\\', '/', $sLink);
+			}
 			$sOutput .= $sLink . ' ' . $sLink . PHP_EOL;
 		}
 
