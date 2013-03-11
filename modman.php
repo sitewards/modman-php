@@ -240,7 +240,8 @@ class Modman_Reader {
 			if (strstr($sLine, '*')) {
 				foreach (glob($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aParameters[0]) as $sFilename) {
 					$sRelativeFilename = substr($sFilename, strlen($this->sModuleDirectory . DIRECTORY_SEPARATOR));
-					$this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeFilename));
+					$sRelativeTarget = str_replace(str_replace('*', '', $aParameters[0]), $aParameters[1], $sRelativeFilename);
+					$this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeTarget));
 				}
 			} else {
 				$this->aObjects[] = new $sClassName($aParameters);
@@ -399,6 +400,7 @@ class Modman_Command_Deploy {
 				mkdir($sDirectoryName, 0777, true);
 			}
 			if (!is_link($oLine->getSymlink())) {
+				echo 'Create symlink ' . $oLine->getSymlink() . ' -> ' . $sFullTarget . PHP_EOL;
 				symlink(
 					$sFullTarget,
 					$oLine->getSymlink()
