@@ -572,7 +572,7 @@ class Modman_Command_Create {
 
 		$sOutput = '';
 		foreach ($this->aLinks as $sLink){
-			$sOutput .= $sLink . ' ' . $sLink . "\n";
+			$sOutput .= $sLink . ' ' . $sLink . PHP_EOL;
 		}
 
 		$rModmanFile = fopen($this->getModmanFilePath(), 'w');
