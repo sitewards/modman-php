@@ -63,6 +63,10 @@ class Modman {
 					break;
 				case 'create':
 					$oCreate = new Modman_Command_Create();
+					$iIncludeOffset = array_search('--include', $aParameters);
+					if ($iIncludeOffset){
+						$oCreate->setIncludeFile($aParameters[$iIncludeOffset + 1]);
+					}
 					$oCreate->doCreate($bForce);
 					break;
 				default:
@@ -523,6 +527,17 @@ class Modman_Command_Create {
 
 	private $aLinks = array();
 
+	private $sIncludeFilePath;
+
+	public function setIncludeFile($sFilename){
+		$sFilePath = realpath($sFilename);
+		if (!$sFilename){
+			throw new Exception("please provide a valid include file");
+		} else {
+			$this->sIncludeFilePath = $sFilePath;
+		}
+	}
+
 	private function isDirectoryEmpty($sDirectoryPath){
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		return count($aCurrentDirectoryListing) <= 2;
@@ -577,6 +592,13 @@ class Modman_Command_Create {
 
 		$rModmanFile = fopen($this->getModmanFilePath(), 'w');
 		fputs($rModmanFile,$sOutput);
+
+		// if include file defined, include it to the modman
+		if ($this->sIncludeFilePath){
+			$sIncludeFileContent = file_get_contents($this->sIncludeFilePath);
+			fputs($rModmanFile,  "\n" . $sIncludeFileContent);
+		}
+
 		fclose($rModmanFile);
 
 	}
