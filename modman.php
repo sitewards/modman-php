@@ -32,6 +32,7 @@ class Modman {
 					}
 					$oLink = new Modman_Command_Link($sLinkPath);
 					$oLink->createSymlinks($bForce);
+					echo 'Successfully create symlink new module \'' . basename($sLinkPath) . '\'' . PHP_EOL;
 					break;
 				case 'init':
 					$oInit = new Modman_Command_Init();
@@ -43,6 +44,7 @@ class Modman {
 					}
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
 					$oDeploy->doDeploy($bForce);
+					echo $aParameters[2] . ' has been deployed under ' . getcwd() . PHP_EOL;
 					break;
 				case 'repair':
 					$bForce = true;
@@ -244,7 +246,8 @@ class Modman_Reader {
 			if (strstr($sLine, '*')) {
 				foreach (glob($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aParameters[0]) as $sFilename) {
 					$sRelativeFilename = substr($sFilename, strlen($this->sModuleDirectory . DIRECTORY_SEPARATOR));
-					$this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeFilename));
+					$sRelativeTarget = str_replace(str_replace('*', '', $aParameters[0]), $aParameters[1], $sRelativeFilename);
+					$this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeTarget));
 				}
 			} else {
 				$this->aObjects[] = new $sClassName($aParameters);
@@ -403,6 +406,7 @@ class Modman_Command_Deploy {
 				mkdir($sDirectoryName, 0777, true);
 			}
 			if (!is_link($oLine->getSymlink())) {
+				echo ' Applied: ' . $oLine->getSymlink() . ' ' . $sFullTarget . PHP_EOL;
 				symlink(
 					$sFullTarget,
 					$oLine->getSymlink()
@@ -587,7 +591,11 @@ class Modman_Command_Create {
 
 		$sOutput = '';
 		foreach ($this->aLinks as $sLink){
-			$sOutput .= $sLink . ' ' . $sLink . "\n";
+			$sLink = '/' . $sLink;
+			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+				$sLink = str_replace('\\', '/', $sLink);
+			}
+			$sOutput .= $sLink . ' ' . $sLink . PHP_EOL;
 		}
 
 		$rModmanFile = fopen($this->getModmanFilePath(), 'w');
