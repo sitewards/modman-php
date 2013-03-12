@@ -110,4 +110,5 @@ Scans through the current directory and creates a modman file containing all fil
     modman create
 	
 	
-Optional parameter --force to automatically overwrite existing modman-file
+Optional parameter --force to automatically overwrite existing modman-file.
+Optional parameter --include-hidden to list hidden files and directories in modman-file

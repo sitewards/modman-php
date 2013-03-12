@@ -66,10 +66,11 @@ class Modman {
 				case 'create':
 					$oCreate = new Modman_Command_Create();
 					$iIncludeOffset = array_search('--include', $aParameters);
+					$bListHidden = array_search('--include-hidden', $aParameters);
 					if ($iIncludeOffset){
 						$oCreate->setIncludeFile($aParameters[$iIncludeOffset + 1]);
 					}
-					$oCreate->doCreate($bForce);
+					$oCreate->doCreate($bForce, $bListHidden);
 					break;
 				default:
 					throw new Exception('command does not exist');
@@ -90,13 +91,13 @@ PHP-based module manager, originally implemented as bash-script
 (for original implementation see https://github.com/colinmollenhour/modman)
 
 Following general commands are currently supported:
-- link (with or without --force)
+- link (optional --force)
 - init
 - repair
-- deploy (with or without --force)
-- deploy-all (with or without --force)
+- deploy (optional --force)
+- deploy-all (optional --force)
 - clean
-- create (with or without --force)
+- create (optional --force and --include-hidden)
 
 Currently supported in modman-files:
 - symlinks (with wildcards)
@@ -533,6 +534,8 @@ class Modman_Command_Create {
 
 	private $sIncludeFilePath;
 
+	private $bListHidden = false;
+
 	public function setIncludeFile($sFilename){
 		$sFilePath = realpath($sFilename);
 		if (!$sFilename){
@@ -547,13 +550,18 @@ class Modman_Command_Create {
 		return count($aCurrentDirectoryListing) <= 2;
 	}
 
+	private function isHiddenNode($sNode){
+		return strlen($sNode) > 2 && substr($sNode, 0, 1) == '.';
+	}
+
 	private function getDirectoryStructure($sDirectoryPath){
 		$aResult = array();
 
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		foreach ($aCurrentDirectoryListing as $sNode){
-			if (!in_array($sNode, array(".",".."))){
-				$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
+			$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
+			if ((!$this->isHiddenNode($sNode) || $this->bListHidden)
+				&& !in_array($sNode, array(".",".."))){
 				if (is_dir($sDirectoryPathToCheck)
 					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)){
 					$aResult[$sNode] = $this->getDirectoryStructure($sDirectoryPathToCheck);
@@ -611,7 +619,9 @@ class Modman_Command_Create {
 
 	}
 
-	public function doCreate($bForce){
+	public function doCreate($bForce, $bListHidden = false){
+		$this->bListHidden = $bListHidden;
+
 		$aDirectoryStructure = $this->getDirectoryStructure(getcwd());
 		$this->generateLinkListFromDirectoryStructure($aDirectoryStructure);
 
