@@ -97,7 +97,7 @@ Following general commands are currently supported:
 - deploy (optional --force)
 - deploy-all (optional --force)
 - clean
-- create (optional --force and --include-hidden)
+- create (optional --force, --include <include_file> and --include-hidden)
 
 Currently supported in modman-files:
 - symlinks (with wildcards)

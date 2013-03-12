@@ -111,4 +111,5 @@ Scans through the current directory and creates a modman file containing all fil
 	
 	
 Optional parameter --force to automatically overwrite existing modman-file.
-Optional parameter --include-hidden to list hidden files and directories in modman-file
+Optional parameter --include-hidden to list hidden files and directories in modman-file.
+Optional parameter --include <include_file> to include a template file at the end of the new modman-file.
