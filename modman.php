@@ -536,9 +536,11 @@ class Modman_Command_Create {
 
 	private $bListHidden = false;
 
+	const MAGENTO_MODULE_RELATIVE_PATH_DEPTH = 4;
+
 	public function setIncludeFile($sFilename){
 		$sFilePath = realpath($sFilename);
-		if (!$sFilename){
+		if (!$sFilePath){
 			throw new Exception("please provide a valid include file");
 		} else {
 			$this->sIncludeFilePath = $sFilePath;
@@ -554,6 +556,24 @@ class Modman_Command_Create {
 		return strlen($sNode) > 2 && substr($sNode, 0, 1) == '.';
 	}
 
+	private function isMagentoModuleDirectory($sDirectoryPathToCheck){
+
+		$aPathParts = explode(DIRECTORY_SEPARATOR, $sDirectoryPathToCheck);
+
+		$iAppPosition = array_search('app', $aPathParts);
+		if (!$iAppPosition){
+			return false;
+		}
+		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_RELATIVE_PATH_DEPTH])){
+			return false;
+		}
+
+		if ($aPathParts[$iAppPosition + 1] == 'code'
+			&& in_array($aPathParts[$iAppPosition + 2], array('community', 'local'))){
+			return true;
+		}
+	}
+
 	private function getDirectoryStructure($sDirectoryPath){
 		$aResult = array();
 
@@ -563,7 +583,8 @@ class Modman_Command_Create {
 			if ((!$this->isHiddenNode($sNode) || $this->bListHidden)
 				&& !in_array($sNode, array(".",".."))){
 				if (is_dir($sDirectoryPathToCheck)
-					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)){
+					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)
+					&& !$this->isMagentoModuleDirectory($sDirectoryPathToCheck)){
 					$aResult[$sNode] = $this->getDirectoryStructure($sDirectoryPathToCheck);
 				} else {
 					$aResult[] = $sNode;
