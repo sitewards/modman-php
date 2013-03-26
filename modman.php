@@ -392,6 +392,9 @@ class Modman_Command_Deploy {
 			$sFullTarget = $sTarget .
 				DIRECTORY_SEPARATOR .
 				$oLine->getTarget();
+			$sFullSymlink = getcwd() .
+				DIRECTORY_SEPARATOR .
+				$oLine->getSymlink();
 			if (!file_exists($sFullTarget)) {
 				throw new Exception('can not link to non-existing file ' . $sFullTarget);
 			}
@@ -401,11 +404,11 @@ class Modman_Command_Deploy {
 				echo 'Create directory ' . $sDirectoryName . PHP_EOL;
 				mkdir($sDirectoryName, 0777, true);
 			}
-			if (!is_link($oLine->getSymlink())) {
-				echo ' Applied: ' . $oLine->getSymlink() . ' ' . $sFullTarget . PHP_EOL;
+			if (!is_link($sFullSymlink)) {
+				echo ' Applied: ' . $sFullSymlink . ' ' . $sFullTarget . PHP_EOL;
 				symlink(
 					$sFullTarget,
-					$oLine->getSymlink()
+					$sFullSymlink
 				);
 			}
 		}
