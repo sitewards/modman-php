@@ -65,7 +65,12 @@ class Modman {
 					break;
 				case 'create':
 					$oCreate = new Modman_Command_Create();
-					$oCreate->doCreate($bForce);
+					$iIncludeOffset = array_search('--include', $aParameters);
+					$bListHidden = array_search('--include-hidden', $aParameters);
+					if ($iIncludeOffset){
+						$oCreate->setIncludeFile($aParameters[$iIncludeOffset + 1]);
+					}
+					$oCreate->doCreate($bForce, $bListHidden);
 					break;
 				default:
 					throw new Exception('command does not exist');
@@ -86,13 +91,13 @@ PHP-based module manager, originally implemented as bash-script
 (for original implementation see https://github.com/colinmollenhour/modman)
 
 Following general commands are currently supported:
-- link (with or without --force)
+- link (optional --force)
 - init
 - repair
-- deploy (with or without --force)
-- deploy-all (with or without --force)
+- deploy (optional --force)
+- deploy-all (optional --force)
 - clean
-- create (with or without --force)
+- create (optional --force, --include <include_file> and --include-hidden)
 
 Currently supported in modman-files:
 - symlinks (with wildcards)
@@ -530,9 +535,46 @@ class Modman_Command_Create {
 
 	private $aLinks = array();
 
+	private $sIncludeFilePath;
+
+	private $bListHidden = false;
+
+	const MAGENTO_MODULE_RELATIVE_PATH_DEPTH = 4;
+
+	public function setIncludeFile($sFilename){
+		$sFilePath = realpath($sFilename);
+		if (!$sFilePath){
+			throw new Exception("please provide a valid include file");
+		} else {
+			$this->sIncludeFilePath = $sFilePath;
+		}
+	}
+
 	private function isDirectoryEmpty($sDirectoryPath){
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		return count($aCurrentDirectoryListing) <= 2;
+	}
+
+	private function isHiddenNode($sNode){
+		return strlen($sNode) > 2 && substr($sNode, 0, 1) == '.';
+	}
+
+	private function isMagentoModuleDirectory($sDirectoryPathToCheck){
+
+		$aPathParts = explode(DIRECTORY_SEPARATOR, $sDirectoryPathToCheck);
+
+		$iAppPosition = array_search('app', $aPathParts);
+		if (!$iAppPosition){
+			return false;
+		}
+		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_RELATIVE_PATH_DEPTH])){
+			return false;
+		}
+
+		if ($aPathParts[$iAppPosition + 1] == 'code'
+			&& in_array($aPathParts[$iAppPosition + 2], array('community', 'local'))){
+			return true;
+		}
 	}
 
 	private function getDirectoryStructure($sDirectoryPath){
@@ -540,10 +582,12 @@ class Modman_Command_Create {
 
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		foreach ($aCurrentDirectoryListing as $sNode){
-			if (!in_array($sNode, array(".",".."))){
-				$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
+			$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
+			if ((!$this->isHiddenNode($sNode) || $this->bListHidden)
+				&& !in_array($sNode, array(".","..","modman"))){
 				if (is_dir($sDirectoryPathToCheck)
-					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)){
+					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)
+					&& !$this->isMagentoModuleDirectory($sDirectoryPathToCheck)){
 					$aResult[$sNode] = $this->getDirectoryStructure($sDirectoryPathToCheck);
 				} else {
 					$aResult[] = $sNode;
@@ -588,11 +632,20 @@ class Modman_Command_Create {
 
 		$rModmanFile = fopen($this->getModmanFilePath(), 'w');
 		fputs($rModmanFile,$sOutput);
+
+		// if include file defined, include it to the modman
+		if ($this->sIncludeFilePath){
+			$sIncludeFileContent = file_get_contents($this->sIncludeFilePath);
+			fputs($rModmanFile,  "\n" . $sIncludeFileContent);
+		}
+
 		fclose($rModmanFile);
 
 	}
 
-	public function doCreate($bForce){
+	public function doCreate($bForce, $bListHidden = false){
+		$this->bListHidden = $bListHidden;
+
 		$aDirectoryStructure = $this->getDirectoryStructure(getcwd());
 		$this->generateLinkListFromDirectoryStructure($aDirectoryStructure);
 

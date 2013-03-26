@@ -110,4 +110,7 @@ Scans through the current directory and creates a modman file containing all fil
     modman create
 	
 	
-Optional parameter --force to automatically overwrite existing modman-file
+Optional parameter --force to automatically overwrite existing modman-file.
+Optional parameter --include-hidden to list hidden files and directories in modman-file.
+Optional parameter --include <include_file> to include a template file at the end of the new modman-file.
+If the current directory is recognized as a magento module, only the path to the module's code directory is added to the modman file.
