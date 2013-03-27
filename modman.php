@@ -581,7 +581,7 @@ class Modman_Command_Create {
 		foreach ($aCurrentDirectoryListing as $sNode){
 			$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
 			if ((!$this->isHiddenNode($sNode) || $this->bListHidden)
-				&& !in_array($sNode, array(".","..","modman"))){
+				&& !in_array($sNode, array(".","..","modman","README","README.md"))){
 				if (is_dir($sDirectoryPathToCheck)
 					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)
 					&& !$this->isMagentoModuleDirectory($sDirectoryPathToCheck)){
@@ -598,7 +598,9 @@ class Modman_Command_Create {
 	private function generateLinkListFromDirectoryStructure($aDirectoryStructure, $aPathElements = array()){
 		foreach ($aDirectoryStructure as $sDirectory => $mElements){
 			if (!is_array($mElements)){
-					$this->aLinks[] = implode(DIRECTORY_SEPARATOR, $aPathElements) . DIRECTORY_SEPARATOR . $mElements;
+					$this->aLinks[] =
+						(count($aPathElements) > 0 ? implode(DIRECTORY_SEPARATOR, $aPathElements) . DIRECTORY_SEPARATOR  : '') .
+						$mElements;
 			} else {
 				$this->generateLinkListFromDirectoryStructure($mElements, array_merge($aPathElements, array($sDirectory)));
 			}
