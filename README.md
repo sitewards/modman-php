@@ -1,4 +1,4 @@
-modman-php
+﻿modman-php
 ==========
 
 PHP implementation for modman, to use it on every operating system with PHP support (also Windows).
@@ -114,3 +114,8 @@ Optional parameter --force to automatically overwrite existing modman-file.
 Optional parameter --include-hidden to list hidden files and directories in modman-file.
 Optional parameter --include <include_file> to include a template file at the end of the new modman-file.
 If the current directory is recognized as a magento module, only the path to the module's code directory is added to the modman file.
+
+Feature ideas
+=============
+
+- Check if "allow symlinks" is activated in Magento when linking template files
