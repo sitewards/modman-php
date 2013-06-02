@@ -536,7 +536,8 @@ class Modman_Command_Create {
 
 	private $bListHidden = false;
 
-	const MAGENTO_MODULE_RELATIVE_PATH_DEPTH = 4;
+	const MAGENTO_MODULE_CODE_RELATIVE_PATH_DEPTH = 4;
+	const MAGENTO_MODULE_DESIGN_RELATIVE_PATH_DEPTH = 7;
 
 	public function setIncludeFile($sFilename){
 		$sFilePath = realpath($sFilename);
@@ -557,19 +558,41 @@ class Modman_Command_Create {
 	}
 
 	private function isMagentoModuleDirectory($sDirectoryPathToCheck){
-
 		$aPathParts = explode(DIRECTORY_SEPARATOR, $sDirectoryPathToCheck);
 
 		$iAppPosition = array_search('app', $aPathParts);
 		if (!$iAppPosition){
 			return false;
 		}
-		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_RELATIVE_PATH_DEPTH])){
+		return (
+			$this->isMagentoModuleCodeDirectory($aPathParts, $iAppPosition) OR
+			$this->isMagentoModuleDesignDirectory($aPathParts, $iAppPosition)
+		);
+
+	}
+
+	private function isMagentoModuleCodeDirectory($aPathParts, $iAppPosition) {
+		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_CODE_RELATIVE_PATH_DEPTH])){
 			return false;
 		}
 
 		if ($aPathParts[$iAppPosition + 1] == 'code'
 			&& in_array($aPathParts[$iAppPosition + 2], array('community', 'local'))){
+			return true;
+		}
+	}
+
+	private function isMagentoModuleDesignDirectory($aPathParts, $iAppPosition) {
+		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_DESIGN_RELATIVE_PATH_DEPTH])){
+			return false;
+		}
+
+		if ($aPathParts[$iAppPosition + 1] == 'design'
+			&& $aPathParts[$iAppPosition + 2] == 'frontend'
+		    && $aPathParts[$iAppPosition + 3] == 'base'
+		    && $aPathParts[$iAppPosition + 4] == 'default'
+		    && $aPathParts[$iAppPosition + 5] == 'template'
+		){
 			return true;
 		}
 	}
