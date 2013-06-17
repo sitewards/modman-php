@@ -807,7 +807,7 @@ class Modman_Command_Create {
 		foreach ($aCurrentDirectoryListing as $sNode){
 			$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
 			if ((!$this->isHiddenNode($sNode) || $this->bListHidden)
-				&& !in_array($sNode, array(".","..","modman","README","README.md",'composer.json','atlassian-ide-plugin.xml'))){
+				&& !in_array($sNode, array('.', '..', 'modman', 'README', 'README.md', 'composer.json', 'atlassian-ide-plugin.xml'))){
 				if (is_dir($sDirectoryPathToCheck)
 					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)
 					&& !$this->isMagentoModuleDirectory($sDirectoryPathToCheck)){
