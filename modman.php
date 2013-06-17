@@ -2,7 +2,7 @@
 class Modman {
 
 	/**
-	 * the .modman direcory is missing
+	 * the .modman directory is missing
 	 */
 	const ERR_NOT_INITIALIZED = 1;
 
@@ -11,6 +11,11 @@ class Modman {
 	 */
 	const ERR_NO_MODMAN_FILE = 2;
 
+	/**
+	 * runs and dispatches the modman program
+	 *
+	 * @param $aParameters this is just a representation of $argv (the parameters which were used to launch the program)
+	 */
 	public function run($aParameters) {
 		try {
 			if (!isset($aParameters[1])) {
@@ -85,6 +90,9 @@ class Modman {
 		}
 	}
 
+	/**
+	 * prints the help
+	 */
 	public function printHelp(){
 		$sHelp = <<< EOH
 PHP-based module manager, originally implemented as bash-script
@@ -112,10 +120,21 @@ EOH;
 class Modman_Command_All {
 	private $sClassName;
 
+	/**
+	 * constructor for a command
+	 *
+	 * @param string $sClassName
+	 */
 	public function __construct($sClassName) {
 		$this->sClassName = $sClassName;
 	}
 
+	/**
+	 * returns all linked modules
+	 *
+	 * @return array
+	 * @throws Exception if modman directory does not exist
+	 */
 	private function getAllModules() {
 		if (!file_exists(Modman_Command_Init::MODMAN_DIRECTORY_NAME)) {
 			throw new Exception ('No modman directory found. You need to call "modman init" to create it.' . PHP_EOL
@@ -127,6 +146,12 @@ class Modman_Command_All {
 		return $aDirEntries;
 	}
 
+	/**
+	 * calls a method on all modules
+	 *
+	 * @param string $sMethodName the method name to call
+	 * @param array $aArguments the parameters to give that method
+	 */
 	public function __call($sMethodName, $aArguments) {
 		foreach ($this->getAllModules() as $sModuleName) {
 			$oClass = new $this->sClassName($sModuleName);
@@ -155,6 +180,11 @@ class Modman_Command_Init {
 class Modman_Command_Link {
 	private $sTarget;
 
+	/**
+	 * constructor
+	 *
+	 * @param string $sTarget target to link
+	 */
 	public function __construct($sTarget) {
 		if (empty($sTarget)) {
 			throw new Exception('no source defined');
@@ -162,6 +192,12 @@ class Modman_Command_Link {
 		$this->sTarget = $sTarget;
 	}
 
+	/**
+	 * creates the symlinks
+	 *
+	 * @param bool $bForce if true errors will be ignored
+	 * @throws Exception if module i already linked
+	 */
 	public function createSymlinks($bForce = false) {
 		$sModuleName = basename($this->sTarget);
 		$sModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $sModuleName;
@@ -178,6 +214,11 @@ class Modman_Command_Link {
 class Modman_Command_Link_Line {
 	private $sTarget, $sSymlink;
 
+	/**
+	 * constructor
+	 *
+	 * @param array $aDirectories - key 0 = source; key 1 = target
+	 */
 	public function __construct($aDirectories) {
 		$this->sTarget = $aDirectories[0];
 		if (empty($aDirectories[1])) {
@@ -187,14 +228,29 @@ class Modman_Command_Link_Line {
 		}
 	}
 
+	/**
+	 * returns the target
+	 *
+	 * @return string
+	 */
 	public function getTarget() {
 		return $this->sTarget;
 	}
 
+	/**
+	 * returns the symlink
+	 *
+	 * @return string
+	 */
 	public function getSymlink() {
 		return getcwd() . DIRECTORY_SEPARATOR . $this->sSymlink;
 	}
 
+	/**
+	 * returns the symlink base dir
+	 *
+	 * @return string
+	 */
 	public function getSymlinkBaseDir() {
 		return dirname($this->getSymlink());
 	}
@@ -210,6 +266,11 @@ class Modman_Reader {
 	private $aShells = array();
 	private $sModuleDirectory;
 
+	/**
+	 * constructor
+	 *
+	 * @param string $sDirectory - where to read
+	 */
 	public function __construct($sDirectory) {
 		$this->sModuleDirectory = $sDirectory;
 		$this->aFileContent = file($sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_FILE_NAME);
@@ -221,10 +282,22 @@ class Modman_Reader {
 		$this->aFileContent = file($sFileName);
 	}
 
+	/**
+	 * returns the params of a line as array
+	 *
+	 * @param string $sRow line separated by spaces
+	 * @return array
+	 */
 	private function getParamsArray($sRow){
 		return explode(' ', preg_replace('/\s+/', ' ', $sRow));
 	}
 
+	/**
+	 * returns an array of objects per row
+	 *
+	 * @param string $sClassName class which should be used to initialize each row
+	 * @return array
+	 */
 	public function getObjectsPerRow($sClassName) {
 		$this->sClassName = $sClassName;
 		foreach ($this->aFileContent as $sLine) {
@@ -257,6 +330,12 @@ class Modman_Reader {
 		return $this->aObjects;
 	}
 
+	/**
+	 * imports another file
+	 *
+	 * @param array $aCommandParams params submitted to import
+	 * @throws Exception if the path could not be parsed
+	 */
 	private function doImport($aCommandParams){
 		$sDirectoryName = realpath($aCommandParams[1]);
 		if (!$sDirectoryName){
@@ -269,6 +348,11 @@ class Modman_Reader {
 		$this->aObjects = array_merge($this->aObjects, $aObjects);
 	}
 
+	/**
+	 * returns all collected shell commands
+	 *
+	 * @return array
+	 */
 	public function getShells() {
 		return $this->aShells;
 	}
@@ -278,6 +362,13 @@ class Modman_Reader {
 class Modman_Reader_Conflicts {
 	private $aConflicts = array();
 
+	/**
+	 * checks for conflicts in file
+	 *
+	 * @param string $sSymlink symlink name
+	 * @param string $sType type (either dir or file)
+	 * @param string $sTarget = false target where the symlink should link to
+	 */
 	public function checkForConflict($sSymlink, $sType, $sTarget = false) {
 		if (is_link($sSymlink)) {
 			if (
@@ -301,10 +392,20 @@ class Modman_Reader_Conflicts {
 		}
 	}
 
+	/**
+	 * returns if there are any conflicts
+	 *
+	 * @return bool true if conflicts exist
+	 */
 	public function hasConflicts() {
 		return (count($this->aConflicts) > 0);
 	}
 
+	/**
+	 * returns conflicts as human readable string
+	 *
+	 * @return string
+	 */
 	public function getConflictsString() {
 		$sString = '';
 		foreach ($this->aConflicts as $sFilename => $sType) {
@@ -323,6 +424,9 @@ class Modman_Reader_Conflicts {
 		return $sString;
 	}
 
+	/**
+	 * removes a linked module
+	 */
 	public function cleanup() {
 		$oResourceRemover = new Modman_Resource_Remover();
 		foreach ($this->aConflicts as $sFilename => $sType) {
@@ -338,6 +442,12 @@ class Modman_Reader_Conflicts {
 		}
 	}
 
+	/**
+	 * recursive del tree
+	 *
+	 * @param string $sDirectory
+	 * @return bool true if successful
+	 */
 	private function delTree($sDirectory) {
 		$aFiles = array_diff(scandir($sDirectory), array('.','..'));
 		$oResourceRemover = new Modman_Resource_Remover();
@@ -353,6 +463,11 @@ class Modman_Reader_Conflicts {
 class Modman_Command_Deploy {
 	private $sModuleName;
 
+	/**
+	 * constructor
+	 *
+	 * @param string $sModuleName which module to deploy
+	 */
 	public function __construct($sModuleName) {
 		if (empty($sModuleName)) {
 			throw new Exception('please provide a module name to deploy');
@@ -360,6 +475,12 @@ class Modman_Command_Deploy {
 		$this->sModuleName = $sModuleName;
 	}
 
+	/**
+	 * executes the deploy
+	 *
+	 * @param bool $bForce=false true if errors should be ignored
+	 * @throws Exception on error
+	 */
 	public function doDeploy($bForce = false) {
 		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
 		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
@@ -430,6 +551,11 @@ class Modman_Command_Deploy {
 class Modman_Module_Symlink {
 	private $sModuleName;
 
+	/**
+	 * constructor
+	 *
+	 * @param string $sModuleName module name
+	 */
 	public function __construct($sModuleName){
 		if (empty($sModuleName)) {
 			throw new Exception('please provide a module name to deploy');
@@ -437,11 +563,22 @@ class Modman_Module_Symlink {
 		$this->sModuleName = $sModuleName;
 	}
 
+	/**
+	 * returns module symlink
+	 *
+	 * @return string
+	 */
 	public function getModmanModuleSymlink(){
 		$sModmanModuleSymlink = Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $this->sModuleName;
 		return $sModmanModuleSymlink;
 	}
 
+	/**
+	 * returns module symlink path
+	 *
+	 * @return string
+	 * @throws Exception if symlink is not linked
+	 */
 	public function getModmanModuleSymlinkPath(){
 		$sModmanModuleSymlink = $this->getModmanModuleSymlink();
 		if (!is_link($sModmanModuleSymlink)) {
@@ -455,6 +592,9 @@ class Modman_Module_Symlink {
 class Modman_Command_Clean {
 	private $aDeadSymlinks = array();
 
+	/**
+	 * executes the clean command
+	 */
 	public function doClean() {
 		$oResourceRemover = new Modman_Resource_Remover();
 		foreach ($this->getDeadSymlinks() as $sSymlink) {
@@ -463,6 +603,12 @@ class Modman_Command_Clean {
 		}
 	}
 
+	/**
+	 * returns dead symlinks
+	 *
+	 * @param string $sDirectory=NULL define directory to work on, if not defined uses getcwd()
+	 * @return array list of dead symlinks
+	 */
 	private function getDeadSymlinks($sDirectory = NULL) {
 		if (is_null($sDirectory)) {
 			$sDirectory = getcwd();
@@ -471,6 +617,11 @@ class Modman_Command_Clean {
 		return $this->aDeadSymlinks;
 	}
 
+	/**
+	 * recursive scan for dead symlinks
+	 *
+	 * @param string $sDirectory
+	 */
 	private function scanForDeadSymlinks($sDirectory) {
 		foreach (scandir($sDirectory) as $sFilename) {
 			if ($sFilename == '.' OR $sFilename == '..') {
@@ -487,7 +638,11 @@ class Modman_Command_Clean {
 }
 
 class Modman_Command_Remove {
-
+	/**
+	 * constructor
+	 *
+	 * @param string $sModuleName define module name
+	 */
 	public function __construct($sModuleName) {
 		if (empty($sModuleName)) {
 			throw new Exception('please provide a module name to deploy');
@@ -495,6 +650,12 @@ class Modman_Command_Remove {
 		$this->sModuleName = $sModuleName;
 	}
 
+	/**
+	 * executres remove
+	 *
+	 * @param bool $bForce = false, true ignores errors
+	 * @throws Exception on error
+	 */
 	public function doRemove($bForce = false){
 		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
 		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
@@ -524,7 +685,6 @@ class Modman_Command_Remove {
 		}
 
 		$oResourceRemover->doRemoveResource($oModmanModuleSymlink->getModmanModuleSymlink());
-
 	}
 }
 
@@ -539,6 +699,12 @@ class Modman_Command_Create {
 	const MAGENTO_MODULE_CODE_RELATIVE_PATH_DEPTH = 4;
 	const MAGENTO_MODULE_DESIGN_RELATIVE_PATH_DEPTH = 7;
 
+	/**
+	 * sets the include file
+	 *
+	 * @param string $sFilename
+	 * @throws Exception if $sFilename does not exist
+	 */
 	public function setIncludeFile($sFilename){
 		$sFilePath = realpath($sFilename);
 		if (!$sFilePath){
@@ -548,15 +714,33 @@ class Modman_Command_Create {
 		}
 	}
 
+	/**
+	 * checks if a directory is empty
+	 *
+	 * @param string $sDirectoryPath
+	 * @return bool true if directory is empty
+	 */
 	private function isDirectoryEmpty($sDirectoryPath){
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		return count($aCurrentDirectoryListing) <= 2;
 	}
 
+	/**
+	 * checks if node is a hidden once
+	 *
+	 * @param string $sNode
+	 * @return bool true for "." and ".."
+	 */
 	private function isHiddenNode($sNode){
 		return strlen($sNode) > 2 && substr($sNode, 0, 1) == '.';
 	}
 
+	/**
+	 * checks if directory is a magento module
+	 *
+	 * @param string $sDirectoryPathToCheck
+	 * @return bool true if directory is a magento module
+	 */
 	private function isMagentoModuleDirectory($sDirectoryPathToCheck){
 		$aPathParts = explode(DIRECTORY_SEPARATOR, $sDirectoryPathToCheck);
 
@@ -568,9 +752,15 @@ class Modman_Command_Create {
 			$this->isMagentoModuleCodeDirectory($aPathParts, $iAppPosition) OR
 			$this->isMagentoModuleDesignDirectory($aPathParts, $iAppPosition)
 		);
-
 	}
 
+	/**
+	 * checks if directory is the magento code directory
+	 *
+	 * @param array $aPathParts - all path parts from this directory
+	 * @param integer $iAppPosition - position of app directory in $aPathParts
+	 * @return bool true if directory is the magento code directory
+	 */
 	private function isMagentoModuleCodeDirectory($aPathParts, $iAppPosition) {
 		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_CODE_RELATIVE_PATH_DEPTH])){
 			return false;
@@ -582,6 +772,13 @@ class Modman_Command_Create {
 		}
 	}
 
+	/**
+	 * checks if directory is the magento design directory
+	 *
+	 * @param array $aPathParts - all path parts from this directory
+	 * @param integer $iAppPosition - position of app directory in $aPathParts
+	 * @return bool true if directory is the magento design directory
+	 */
 	private function isMagentoModuleDesignDirectory($aPathParts, $iAppPosition) {
 		if (!isset($aPathParts[$iAppPosition + self::MAGENTO_MODULE_DESIGN_RELATIVE_PATH_DEPTH])){
 			return false;
@@ -589,15 +786,21 @@ class Modman_Command_Create {
 
 		if ($aPathParts[$iAppPosition + 1] == 'design'
 			&& $aPathParts[$iAppPosition + 2] == 'frontend'
-		    && $aPathParts[$iAppPosition + 3] == 'base'
-		    && $aPathParts[$iAppPosition + 4] == 'default'
-		    && $aPathParts[$iAppPosition + 5] == 'template'
+			&& $aPathParts[$iAppPosition + 3] == 'base'
+			&& $aPathParts[$iAppPosition + 4] == 'default'
+			&& $aPathParts[$iAppPosition + 5] == 'template'
 		){
 			return true;
 		}
 	}
 
-	private function getDirectoryStructure($sDirectoryPath){
+	/**
+	 * returns directory structure
+	 *
+	 * @param string $sDirectoryPath
+	 * @return array with directory structure
+	 */
+	private function getDirectoryStructure($sDirectoryPath) {
 		$aResult = array();
 
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
@@ -617,7 +820,12 @@ class Modman_Command_Create {
 		return $aResult;
 	}
 
-
+	/**
+	 * generates link list from directory structure
+	 *
+	 * @param array $aDirectoryStructure created by $this->getDirectoryStructure(string)
+	 * @param array $aPathElements = array()
+	 */
 	private function generateLinkListFromDirectoryStructure($aDirectoryStructure, $aPathElements = array()){
 		foreach ($aDirectoryStructure as $sDirectory => $mElements){
 			if (!is_array($mElements)){
@@ -630,14 +838,27 @@ class Modman_Command_Create {
 		}
 	}
 
+	/**
+	 * returns modman file path
+	 *
+	 * @return string
+	 */
 	private function getModmanFilePath(){
 		return getcwd() . DIRECTORY_SEPARATOR . Modman_Reader::MODMAN_FILE_NAME;
 	}
 
+	/**
+	 * checks if modman file exists
+	 *
+	 * @return bool true if modman file exists
+	 */
 	private function existsModmanFile(){
 		return file_exists($this->getModmanFilePath());
 	}
 
+	/**
+	 * generates modman file
+	 */
 	private function generateModmanFile(){
 		if (file_exists($this->getModmanFilePath())){
 			unlink($this->getModmanFilePath());
@@ -665,6 +886,13 @@ class Modman_Command_Create {
 
 	}
 
+	/**
+	 * executes create command
+	 *
+	 * @param bool $bForce - if true errors will be ignored
+	 * @param bool $bListHidden = false, if true hidden files will be listed
+	 * @throws Exception on errors
+	 */
 	public function doCreate($bForce, $bListHidden = false){
 		$this->bListHidden = $bListHidden;
 
@@ -680,7 +908,11 @@ class Modman_Command_Create {
 }
 
 class Modman_Resource_Remover{
-
+	/**
+	 * removes a resource
+	 *
+	 * @param string $sSymlinkPath resource to remove
+	 */
 	public function doRemoveResource($sSymlinkPath){
 		if (is_dir($sSymlinkPath)){
 			rmdir($sSymlinkPath);
@@ -688,7 +920,6 @@ class Modman_Resource_Remover{
 			unlink($sSymlinkPath);
 		}
 	}
-
 }
 
 $oModman = new Modman();
