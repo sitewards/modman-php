@@ -729,7 +729,7 @@ class Modman_Command_Create {
 	 * checks if node is a hidden once
 	 *
 	 * @param string $sNode
-	 * @return bool true for "." and ".."
+	 * @return bool true for hidden files
 	 */
 	private function isHiddenNode($sNode){
 		return strlen($sNode) > 2 && substr($sNode, 0, 1) == '.';
