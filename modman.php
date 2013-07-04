@@ -785,7 +785,11 @@ class Modman_Command_Create {
 		}
 
 		if ($aPathParts[$iAppPosition + 1] == 'design'
-			&& $aPathParts[$iAppPosition + 2] == 'frontend'
+			&& (
+				$aPathParts[$iAppPosition + 2] == 'frontend'
+				|| $aPathParts[$iAppPosition + 2] == 'adminhtml'
+				|| $aPathParts[$iAppPosition + 2] == 'install'
+			)
 			&& $aPathParts[$iAppPosition + 3] == 'base'
 			&& $aPathParts[$iAppPosition + 4] == 'default'
 			&& $aPathParts[$iAppPosition + 5] == 'template'
