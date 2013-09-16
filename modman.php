@@ -383,8 +383,7 @@ class Modman_Reader_Conflicts {
 			if (
 				!(
 					$sType == 'link'
-					AND
-					realpath($sSymlink) == realpath($sTarget)
+					AND realpath($sSymlink) == realpath($sTarget)
 				)
 			) {
 				$this->aConflicts[$sSymlink] = 'link';
@@ -459,6 +458,7 @@ class Modman_Command_Deploy {
 	 * constructor
 	 *
 	 * @param string $sModuleName which module to deploy
+	 * @throws Exception
 	 */
 	public function __construct($sModuleName) {
 		if (empty($sModuleName)) {
@@ -507,9 +507,7 @@ class Modman_Command_Deploy {
 		}
 		foreach ($aLines as $oLine) {
 			/* @var $oLine Modman_Command_Link_Line */
-			$sFullTarget = $sTarget .
-				DIRECTORY_SEPARATOR .
-				$oLine->getTarget();
+			$sFullTarget = $sTarget . DIRECTORY_SEPARATOR . $oLine->getTarget();
 			if (!file_exists($sFullTarget)) {
 				throw new Exception('can not link to non-existing file ' . $sFullTarget);
 			}
@@ -547,6 +545,7 @@ class Modman_Module_Symlink {
 	 * constructor
 	 *
 	 * @param string $sModuleName module name
+	 * @throws Exception
 	 */
 	public function __construct($sModuleName){
 		if (empty($sModuleName)) {
@@ -634,6 +633,7 @@ class Modman_Command_Remove {
 	 * constructor
 	 *
 	 * @param string $sModuleName define module name
+	 * @throws Exception
 	 */
 	public function __construct($sModuleName) {
 		if (empty($sModuleName)) {
@@ -662,16 +662,14 @@ class Modman_Command_Remove {
 			$sLinkPath = $oLine->getSymlink();
 			$sSymlinkPath = getcwd() . DIRECTORY_SEPARATOR . $sLinkPath;
 			if (is_link($sSymlinkPath)
-				&& file_exists($sTarget . DIRECTORY_SEPARATOR . $sOriginalPath)){
+				AND file_exists($sTarget . DIRECTORY_SEPARATOR . $sOriginalPath)){
 
 				if (is_link($sSymlinkPath)){
 					$oResourceRemover->doRemoveResource($sSymlinkPath);
 				} elseif ($bForce){
 					$oResourceRemover->doRemoveResource($sSymlinkPath);
 				} else {
-					throw new Exception('Problem with removing ' . $sSymlinkPath .
-							' - use --force'
-					);
+					throw new Exception('Problem with removing ' . $sSymlinkPath . ' - use --force');
 				}
 			}
 		}
@@ -724,7 +722,7 @@ class Modman_Command_Create {
 	 * @return bool true for hidden files
 	 */
 	private function isHiddenNode($sNode){
-		return strlen($sNode) > 2 && substr($sNode, 0, 1) == '.';
+		return strlen($sNode) > 2 AND substr($sNode, 0, 1) == '.';
 	}
 
 	/**
@@ -741,8 +739,8 @@ class Modman_Command_Create {
 			return false;
 		}
 		return (
-			$this->isMagentoModuleCodeDirectory($aPathParts, $iAppPosition) OR
-			$this->isMagentoModuleDesignDirectory($aPathParts, $iAppPosition)
+			$this->isMagentoModuleCodeDirectory($aPathParts, $iAppPosition)
+			OR $this->isMagentoModuleDesignDirectory($aPathParts, $iAppPosition)
 		);
 	}
 
@@ -759,7 +757,7 @@ class Modman_Command_Create {
 		}
 
 		if ($aPathParts[$iAppPosition + 1] == 'code'
-			&& in_array($aPathParts[$iAppPosition + 2], array('community', 'local'))){
+			AND in_array($aPathParts[$iAppPosition + 2], array('community', 'local'))){
 			return true;
 		}
 	}
@@ -777,14 +775,14 @@ class Modman_Command_Create {
 		}
 
 		if ($aPathParts[$iAppPosition + 1] == 'design'
-			&& (
+			AND (
 				$aPathParts[$iAppPosition + 2] == 'frontend'
-				|| $aPathParts[$iAppPosition + 2] == 'adminhtml'
-				|| $aPathParts[$iAppPosition + 2] == 'install'
+				OR $aPathParts[$iAppPosition + 2] == 'adminhtml'
+				OR $aPathParts[$iAppPosition + 2] == 'install'
 			)
-			&& $aPathParts[$iAppPosition + 3] == 'base'
-			&& $aPathParts[$iAppPosition + 4] == 'default'
-			&& $aPathParts[$iAppPosition + 5] == 'template'
+			AND $aPathParts[$iAppPosition + 3] == 'base'
+			AND $aPathParts[$iAppPosition + 4] == 'default'
+			AND $aPathParts[$iAppPosition + 5] == 'template'
 		){
 			return true;
 		}
@@ -802,11 +800,11 @@ class Modman_Command_Create {
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		foreach ($aCurrentDirectoryListing as $sNode){
 			$sDirectoryPathToCheck = $sDirectoryPath . DIRECTORY_SEPARATOR . $sNode;
-			if ((!$this->isHiddenNode($sNode) || $this->bListHidden)
-				&& !in_array($sNode, array('.', '..', 'modman', 'README', 'README.md', 'composer.json', 'atlassian-ide-plugin.xml'))){
+			if ((!$this->isHiddenNode($sNode) OR $this->bListHidden)
+				AND !in_array($sNode, array('.', '..', 'modman', 'README', 'README.md', 'composer.json', 'atlassian-ide-plugin.xml'))){
 				if (is_dir($sDirectoryPathToCheck)
-					&& !$this->isDirectoryEmpty($sDirectoryPathToCheck)
-					&& !$this->isMagentoModuleDirectory($sDirectoryPathToCheck)){
+					AND !$this->isDirectoryEmpty($sDirectoryPathToCheck)
+					AND !$this->isMagentoModuleDirectory($sDirectoryPathToCheck)){
 					$aResult[$sNode] = $this->getDirectoryStructure($sDirectoryPathToCheck);
 				} else {
 					$aResult[] = $sNode;
@@ -895,7 +893,7 @@ class Modman_Command_Create {
 		$aDirectoryStructure = $this->getDirectoryStructure(getcwd());
 		$this->generateLinkListFromDirectoryStructure($aDirectoryStructure);
 
-		if ($this->existsModmanFile() && !$bForce){
+		if ($this->existsModmanFile() AND !$bForce){
 			throw new Exception('modman file ' . $this->getModmanFilePath() . ' already exists. Use --force');
 		} else {
 			$this->generateModmanFile();
@@ -960,9 +958,9 @@ class Modman_Command_Clone {
 	 * @return string
 	 */
 	private function getModuleFolderPath(){
-		return getcwd() . DIRECTORY_SEPARATOR .
-			Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR .
-			$this->sFolderName;
+		return getcwd() . DIRECTORY_SEPARATOR
+			. Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR
+			. $this->sFolderName;
 	}
 
 	/**
@@ -991,8 +989,8 @@ class Modman_Command_Clone {
 	 */
 	private function existsModmanFile(){
 		return is_file(
-			$this->getModuleFolderPath() . DIRECTORY_SEPARATOR  .
-			Modman_Reader::MODMAN_FILE_NAME
+			$this->getModuleFolderPath() . DIRECTORY_SEPARATOR
+			. Modman_Reader::MODMAN_FILE_NAME
 		);
 	}
 
@@ -1028,14 +1026,14 @@ class Modman_Command_Clone {
 
 		if ($this->existsModuleFolder()){
 			if (!$bForce){
-				throw new Exception("Module already exists. Please use --force to overwrite existing folder");
+				throw new Exception('Module already exists. Please use --force to overwrite existing folder');
 			} else {
 				$this->deleteModuleFolder($this->getModuleFolderPath());
 			}
 		}
 		$this->executeClone();
 
-		if (!$this->existsModmanFile() && $bCreateModman){
+		if (!$this->existsModmanFile() AND $bCreateModman){
 			$this->doCreateModmanFile();
 		}
 	}
