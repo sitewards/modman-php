@@ -77,6 +77,14 @@ class Modman {
 					}
 					$oCreate->doCreate($bForce, $bListHidden);
 					break;
+				case 'clone':
+					if (!isset($aParameters[2])){
+						throw new Exception('Please specify git repository URL');
+					}
+					$bCreateModman = array_search('--create-modman', $aParameters);
+					$oClone = new Modman_Command_Clone($aParameters[2], new Modman_Command_Create());
+					$oClone->doClone($bForce, $bCreateModman);
+					break;
 				default:
 					throw new Exception('command does not exist');
 			}
@@ -106,6 +114,7 @@ Following general commands are currently supported:
 - deploy-all (optional --force)
 - clean
 - create (optional --force, --include <include_file> and --include-hidden)
+- clone (optional --force, --create-modman)
 
 Currently supported in modman-files:
 - symlinks (with wildcards)
@@ -432,7 +441,7 @@ class Modman_Reader_Conflicts {
 		foreach ($this->aConflicts as $sFilename => $sType) {
 			switch ($sType) {
 				case 'dir':
-					$this->delTree($sFilename);
+					$oResourceRemover->doRemoveFolderRecursively($sFilename);
 					break;
 				case 'file':
 				case 'link':
@@ -440,23 +449,6 @@ class Modman_Reader_Conflicts {
 					break;
 			}
 		}
-	}
-
-	/**
-	 * recursive del tree
-	 *
-	 * @param string $sDirectory
-	 * @return bool true if successful
-	 */
-	private function delTree($sDirectory) {
-		$aFiles = array_diff(scandir($sDirectory), array('.','..'));
-		$oResourceRemover = new Modman_Resource_Remover();
-		foreach ($aFiles as $sFile) {
-			(is_dir("$sDirectory/$sFile"))
-				? $this->delTree("$sDirectory/$sFile")
-				: $oResourceRemover->doRemoveResource("$sDirectory/$sFile");
-		}
-		return rmdir($sDirectory);
 	}
 }
 
@@ -911,19 +903,180 @@ class Modman_Command_Create {
 	}
 }
 
+class Modman_Command_Clone {
+
+	/**
+	 * Url if git repo to be cloned
+	 *
+	 * @var string
+	 */
+	private $sGitUrl;
+	/**
+	 * name of the folder for the git repo to be cloned into
+	 *
+	 * @var string
+	 */
+	private $sFolderName;
+	/**
+	 * command to create modman file
+	 *
+	 * @var Modman_Command_Create
+	 */
+	private $oCreate;
+
+	/**
+	 * saves the git url and pre-calculates local folder name
+	 *
+	 * @param string $sGitUrl
+	 * @param Modman_Command_Create $oCreate
+	 */
+	public function __construct($sGitUrl, Modman_Command_Create $oCreate){
+		$this->sGitUrl = $sGitUrl;
+		$this->sFolderName = $this->getFolderNameFromUrl($sGitUrl);
+		$this->oCreate = $oCreate;
+	}
+
+	/**
+	 * calculates local folder name from git url
+	 *
+	 * @param string $sGitUrl
+	 * @return string
+	 */
+	private function getFolderNameFromUrl($sGitUrl){
+		$aSlashParts = explode('/', $sGitUrl);
+		if (strpos($aSlashParts[count($aSlashParts) - 1], '.git') !== false){
+			$aDotParts = explode('.', $aSlashParts[count($aSlashParts) - 1]);
+			$sFolderName = $aDotParts[0];
+		} else {
+			$sFolderName = $aSlashParts[count($aSlashParts) - 1];
+		}
+
+		return $sFolderName;
+	}
+
+	/**
+	 * returns path to module folder
+	 *
+	 * @return string
+	 */
+	private function getModuleFolderPath(){
+		return getcwd() . DIRECTORY_SEPARATOR .
+			Modman_Command_Init::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR .
+			$this->sFolderName;
+	}
+
+	/**
+	 * checks if module folder exists
+	 *
+	 * @return bool
+	 */
+	private function existsModuleFolder(){
+		return is_dir($this->getModuleFolderPath());
+	}
+
+	/**
+	 * executes git clone command
+	 */
+	private function executeClone(){
+		shell_exec(
+			'git clone ' . escapeshellarg($this->sGitUrl) . ' '
+			. escapeshellarg($this->getModuleFolderPath())
+		);
+	}
+
+	/**
+	 * checks if modman file exists in module folder
+	 *
+	 * @return bool
+	 */
+	private function existsModmanFile(){
+		return is_file(
+			$this->getModuleFolderPath() . DIRECTORY_SEPARATOR  .
+			Modman_Reader::MODMAN_FILE_NAME
+		);
+	}
+
+	/**
+	 * creates modman file in the module folder
+	 */
+	private function doCreateModmanFile(){
+		$sCurrentDirectory = getcwd();
+		chdir($this->getModuleFolderPath());
+		$this->oCreate->doCreate(false);
+		chdir($sCurrentDirectory);
+	}
+
+	/**
+	 * deletes module folder
+	 *
+	 * @param string $sFolderName
+	 * @return bool
+	 */
+	private function deleteModuleFolder($sFolderName){
+		$oRemover = new Modman_Resource_Remover();
+		$oRemover->doRemoveFolderRecursively($sFolderName);
+	}
+
+	/**
+	 * main method to create a clone of a git repo
+	 *
+	 * @param bool $bForce
+	 * @param bool $bCreateModman
+	 * @throws Exception
+	 */
+	public function doClone($bForce = false, $bCreateModman = false){
+
+		if ($this->existsModuleFolder()){
+			if (!$bForce){
+				throw new Exception("Module already exists. Please use --force to overwrite existing folder");
+			} else {
+				$this->deleteModuleFolder($this->getModuleFolderPath());
+			}
+		}
+		$this->executeClone();
+
+		if (!$this->existsModmanFile() && $bCreateModman){
+			$this->doCreateModmanFile();
+		}
+	}
+}
+
 class Modman_Resource_Remover{
 	/**
 	 * removes a resource
 	 *
-	 * @param string $sSymlinkPath resource to remove
+	 * @param string $sElementPath resource to remove
 	 */
-	public function doRemoveResource($sSymlinkPath){
-		if (is_dir($sSymlinkPath)){
-			rmdir($sSymlinkPath);
-		} else if (is_file($sSymlinkPath)){
-			unlink($sSymlinkPath);
+	public function doRemoveResource($sElementPath){
+		if (is_dir($sElementPath)){
+			rmdir($sElementPath);
+		} else if (is_file($sElementPath)){
+			// workaround for windows to delete read-only flag
+			// which prevents file from being deleted properly
+			chmod($sElementPath, 0777);
+			unlink($sElementPath);
 		}
 	}
+
+	/**
+	 * deletes folder recursively
+	 *
+	 * @param string $sFolderName
+	 * @return bool
+	 */
+	public function doRemoveFolderRecursively($sFolderName){
+		$aFiles = array_diff(scandir($sFolderName), array('.','..'));
+		foreach ($aFiles as $sFile) {
+			$sCurrentElement = $sFolderName . DIRECTORY_SEPARATOR . $sFile;
+			if (is_dir($sCurrentElement)){
+				$this->doRemoveFolderRecursively($sCurrentElement);
+			} else {
+				$this->doRemoveResource($sCurrentElement);
+			}
+		}
+		$this->doRemoveResource($sFolderName);
+	}
+
 }
 
 $oModman = new Modman();
