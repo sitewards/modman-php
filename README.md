@@ -11,8 +11,9 @@ Currently implemented:
  - repair (repairs all symlinks)
  - clean (removes all dead symlinks)
  - create (creates a modman file for an existing module)
+ - clone (clones a git repository)
 
- --force is available for link, deploy and deploy-all, if not set script aborts when conflicts are found
+ --force is available for link, deploy, deploy-all and clone, if not set script aborts when conflicts are found
 
 Usage examples:
 
@@ -114,6 +115,17 @@ Optional parameter --force to automatically overwrite existing modman-file.
 Optional parameter --include-hidden to list hidden files and directories in modman-file.
 Optional parameter --include <include_file> to include a template file at the end of the new modman-file.
 If the current directory is recognized as a magento module, only the path to the module's code directory is added to the modman file.
+
+clone
+=====
+
+Clones a git repository
+
+    cd $PROJECT
+    modman clone https://git.url
+
+Optional parameter --force to overwrite existing folder.
+Optional parameter --create-modman to create a new modman file in the cloned folder if there is no modman file yet.
 
 Feature ideas
 =============
