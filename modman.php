@@ -1040,6 +1040,17 @@ class Modman_Command_Clone {
 }
 
 class Modman_Resource_Remover{
+
+	/**
+	 * checks if the folder is empty
+	 *
+	 * @param string $sDirectoryPath
+	 * @return bool
+	 */
+	private function isFolderEmpty($sDirectoryPath){
+		return count(scandir($sDirectoryPath)) == 2;
+	}
+
 	/**
 	 * removes a resource
 	 *
@@ -1047,7 +1058,9 @@ class Modman_Resource_Remover{
 	 */
 	public function doRemoveResource($sElementPath){
 		if (is_dir($sElementPath)){
-			rmdir($sElementPath);
+			if ($this->isFolderEmpty($sElementPath)){
+				rmdir($sElementPath);
+			}
 		} else if (is_file($sElementPath)){
 			// workaround for windows to delete read-only flag
 			// which prevents file from being deleted properly
@@ -1063,14 +1076,11 @@ class Modman_Resource_Remover{
 	 * @return bool
 	 */
 	public function doRemoveFolderRecursively($sFolderName){
-		$aFiles = array_diff(scandir($sFolderName), array('.','..'));
-		foreach ($aFiles as $sFile) {
-			$sCurrentElement = $sFolderName . DIRECTORY_SEPARATOR . $sFile;
-			if (is_dir($sCurrentElement)){
-				$this->doRemoveFolderRecursively($sCurrentElement);
-			} else {
-				$this->doRemoveResource($sCurrentElement);
-			}
+
+		$oDirectoryIterator = new RecursiveDirectoryIterator($sFolderName);
+		/** @var SplFileInfo $oElement */
+		foreach (new RecursiveIteratorIterator($oDirectoryIterator, RecursiveIteratorIterator::CHILD_FIRST) as $oElement){
+			$this->doRemoveResource($oElement->getPathname());
 		}
 		$this->doRemoveResource($sFolderName);
 	}
