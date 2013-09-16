@@ -13,7 +13,8 @@ Currently implemented:
  - create (creates a modman file for an existing module)
  - clone (clones a git repository)
 
- --force is available for link, deploy, deploy-all and clone, if not set script aborts when conflicts are found
+
+--force is available for link, deploy, deploy-all and clone, if not set script aborts when conflicts are found
 
 Usage examples:
 
