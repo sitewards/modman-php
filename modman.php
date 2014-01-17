@@ -1057,7 +1057,7 @@ class Modman_Resource_Remover{
 	 */
 	public function doRemoveResource($sElementPath){
 		if (is_dir($sElementPath)){
-			if ($this->isFolderEmpty($sElementPath)){
+			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
 				rmdir($sElementPath);
 			}
 		} else if (is_file($sElementPath)){
