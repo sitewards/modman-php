@@ -659,8 +659,7 @@ class Modman_Command_Remove {
 
 		foreach ($aLines as $oLine) {
 			$sOriginalPath = $oLine->getTarget();
-			$sLinkPath = $oLine->getSymlink();
-			$sSymlinkPath = getcwd() . DIRECTORY_SEPARATOR . $sLinkPath;
+			$sSymlinkPath = $oLine->getSymlink();
 			if (is_link($sSymlinkPath)
 				AND file_exists($sTarget . DIRECTORY_SEPARATOR . $sOriginalPath)){
 
