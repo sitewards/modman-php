@@ -1066,6 +1066,9 @@ class Modman_Resource_Remover{
 			chmod($sElementPath, 0777);
 			unlink($sElementPath);
 		}
+		elseif (is_link($sElementPath)){
+			unlink($sElementPath);
+		}
 	}
 
 	/**
