@@ -1029,6 +1029,8 @@ class Modman_Command_Clone {
 	 * @throws Exception
 	 */
 	public function doClone($bForce = false, $bCreateModman = false){
+        $oInit = new Modman_Command_Init();
+        $oInit->doInit();
 
 		if ($this->existsModuleFolder()){
 			if (!$bForce){
