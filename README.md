@@ -22,6 +22,10 @@ Usage examples:
     php modman.php link ..\B2BProfessional
     php modman.php deploy B2BProfessional
 
+Or directly clone which does also init and deploy:
+
+    php modman.php clone https://github.com/sitewards/B2BProfessional
+
 Currently supported in modman files:
  - symlinks (incl. wildcards)
  - @import
