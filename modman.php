@@ -572,8 +572,8 @@ class Modman_Module_Symlink {
 	 */
 	public function getModmanModuleSymlinkPath(){
 		$sModmanModuleSymlink = $this->getModmanModuleSymlink();
-		if (!is_link($sModmanModuleSymlink)) {
-			throw new Exception($this->sModuleName . ' is not linked');
+		if (!is_link($sModmanModuleSymlink) AND !is_dir($sModmanModuleSymlink)) {
+			throw new Exception($this->sModuleName . ' is not initialized, please clone or link it');
 		}
 		$sTarget = realpath($sModmanModuleSymlink);
 		return $sTarget;
@@ -930,24 +930,30 @@ class Modman_Command_Clone {
 	 */
 	public function __construct($sGitUrl, Modman_Command_Create $oCreate){
 		$this->sGitUrl = $sGitUrl;
-		$this->sFolderName = $this->getFolderNameFromUrl($sGitUrl);
+		$this->sFolderName = $this->getFolderNameFromParam($sGitUrl);
 		$this->oCreate = $oCreate;
 	}
 
 	/**
-	 * calculates local folder name from git url
+	 * calculates local folder name from git url or directory
 	 *
 	 * @param string $sGitUrl
 	 * @return string
 	 */
-	private function getFolderNameFromUrl($sGitUrl){
-		$aSlashParts = explode('/', $sGitUrl);
-		if (strpos($aSlashParts[count($aSlashParts) - 1], '.git') !== false){
-			$aDotParts = explode('.', $aSlashParts[count($aSlashParts) - 1]);
-			$sFolderName = $aDotParts[0];
-		} else {
-			$sFolderName = $aSlashParts[count($aSlashParts) - 1];
-		}
+	private function getFolderNameFromParam($sGitUrl){
+        // is this a url
+        if (strstr($sGitUrl, '/')) {
+            $aSlashParts = explode('/', $sGitUrl);
+            if (strpos($aSlashParts[count($aSlashParts) - 1], '.git') !== false){
+                $aDotParts = explode('.', $aSlashParts[count($aSlashParts) - 1]);
+                $sFolderName = $aDotParts[0];
+            } else {
+                $sFolderName = $aSlashParts[count($aSlashParts) - 1];
+            }
+        // or a directory?
+        } else {
+            $sFolderName = basename($sGitUrl);
+        }
 
 		return $sFolderName;
 	}
@@ -1036,6 +1042,10 @@ class Modman_Command_Clone {
 		if (!$this->existsModmanFile() AND $bCreateModman){
 			$this->doCreateModmanFile();
 		}
+
+        $oDeploy = new Modman_Command_Deploy($this->sFolderName);
+        $oDeploy->doDeploy();
+
 	}
 }
 
