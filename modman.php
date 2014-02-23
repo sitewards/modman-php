@@ -659,8 +659,7 @@ class Modman_Command_Remove {
 
 		foreach ($aLines as $oLine) {
 			$sOriginalPath = $oLine->getTarget();
-			$sLinkPath = $oLine->getSymlink();
-			$sSymlinkPath = getcwd() . DIRECTORY_SEPARATOR . $sLinkPath;
+			$sSymlinkPath = $oLine->getSymlink();
 			if (is_link($sSymlinkPath)
 				AND file_exists($sTarget . DIRECTORY_SEPARATOR . $sOriginalPath)){
 
@@ -1070,13 +1069,16 @@ class Modman_Resource_Remover{
 	 */
 	public function doRemoveResource($sElementPath){
 		if (is_dir($sElementPath)){
-			if ($this->isFolderEmpty($sElementPath)){
+			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
 				rmdir($sElementPath);
 			}
 		} else if (is_file($sElementPath)){
 			// workaround for windows to delete read-only flag
 			// which prevents file from being deleted properly
 			chmod($sElementPath, 0777);
+			unlink($sElementPath);
+		}
+		elseif (is_link($sElementPath)){
 			unlink($sElementPath);
 		}
 	}
