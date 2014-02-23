@@ -1046,7 +1046,7 @@ class Modman_Command_Clone {
 		}
 
         $oDeploy = new Modman_Command_Deploy($this->sFolderName);
-        $oDeploy->doDeploy();
+        $oDeploy->doDeploy($bForce);
 
 	}
 }
