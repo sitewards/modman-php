@@ -89,10 +89,22 @@ class Modman {
 					throw new Exception('command does not exist');
 			}
 		} catch (Exception $oException) {
-			echo '-----' . PHP_EOL;
-			echo 'An error occured:' . PHP_EOL;
-			echo $oException->getMessage() . PHP_EOL;
-			echo '-----';
+            // set small timeout, no big delays for a funny feature
+            $rCtx = stream_context_create(array('http'=>
+                array(
+                    'timeout' => 1,
+                )
+            ));
+            $sMessage = $oException->getMessage();
+            $sCowsay = @file_get_contents('http://cowsay.morecode.org/say?message=' . urlencode($sMessage) . '&format=text', false, $rCtx);
+            if ($sCowsay) {
+                echo $sCowsay;
+            } else {
+                echo '-----' . PHP_EOL;
+                echo 'An error occured:' . PHP_EOL;
+                echo $sMessage . PHP_EOL;
+                echo '-----';
+            }
 			echo PHP_EOL . PHP_EOL;
 			$this->printHelp();
 		}
