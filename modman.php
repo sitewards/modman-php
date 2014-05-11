@@ -40,8 +40,14 @@ class Modman {
 					echo 'Successfully create symlink new module \'' . basename($sLinkPath) . '\'' . PHP_EOL;
 					break;
 				case 'init':
+					if (isset($aParameters[2])) {
+						$sDir = $aParameters[2];
+					} else {
+						$sDir = getcwd();
+					}
+					$sInitPath = realpath($sDir);
 					$oInit = new Modman_Command_Init();
-					$oInit->doInit();
+					$oInit->doInit($sInitPath);
 					break;
 				case 'deploy':
 					if (!isset($aParameters[2])) {
@@ -120,7 +126,7 @@ PHP-based module manager, originally implemented as bash-script
 
 Following general commands are currently supported:
 - link (optional --force)
-- init
+- init (optional <basedir>)
 - repair
 - deploy (optional --force)
 - deploy-all (optional --force)
@@ -188,10 +194,11 @@ class Modman_Command_Init {
 
 	/**
 	 * Creates directory ".modman" if it doesn't exist
+	 *
+	 * @param string
 	 */
-	public function doInit(){
-		$sCurrentDirectory = getcwd();
-		$sModmanDirectory = $sCurrentDirectory . DIRECTORY_SEPARATOR . self::MODMAN_DIRECTORY_NAME;
+	public function doInit($sDirectory) {
+		$sModmanDirectory = $sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_DIRECTORY_NAME;
 		if (!is_dir($sModmanDirectory)){
 			mkdir($sModmanDirectory);
 		}

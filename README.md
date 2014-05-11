@@ -53,6 +53,13 @@ Creates the .modman directory, which is used for all other operations.
     cd $PROJECT
     modman init
 
+or
+
+    cd $PROJECT
+    modman init <basedir>
+
+If you don't specify a basedir the current working directory will be used
+
 link
 ====
 
