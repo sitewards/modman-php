@@ -40,14 +40,13 @@ class Modman {
 					echo 'Successfully create symlink new module \'' . basename($sLinkPath) . '\'' . PHP_EOL;
 					break;
 				case 'init':
+					$sCwd = getcwd();
 					if (isset($aParameters[2])) {
-						$sDir = $aParameters[2];
-					} else {
-						$sDir = getcwd();
+						$sBaseDir = $aParameters[2];
 					}
-					$sInitPath = realpath($sDir);
+					$sInitPath = realpath($sCwd);
 					$oInit = new Modman_Command_Init();
-					$oInit->doInit($sInitPath);
+					$oInit->doInit($sInitPath, $sBaseDir);
 					break;
 				case 'deploy':
 					if (!isset($aParameters[2])) {
@@ -170,6 +169,10 @@ class Modman_Command_All {
 		$aDirEntries = scandir(Modman_Command_Init::MODMAN_DIRECTORY_NAME);
 		unset($aDirEntries[array_search('.', $aDirEntries)]);
 		unset($aDirEntries[array_search('..', $aDirEntries)]);
+		$iBaseDir = array_search(Modman_Command_Init::getBaseDirFile(), $aDirEntries);
+		if ($iBaseDir !== false) {
+			unset($aDirEntries[$iBaseDir]);
+		}
 		return $aDirEntries;
 	}
 
@@ -191,16 +194,25 @@ class Modman_Command_Init {
 
 	// directory name
 	const MODMAN_DIRECTORY_NAME = '.modman';
+	const MODMAN_BASEDIR_FILE = '.basedir';
+
+	public static function getBaseDirFile() {
+		return self::MODMAN_DIRECTORY_NAME . DIRECTORY_SEPARATOR . self::MODMAN_BASEDIR_FILE;
+	}
 
 	/**
 	 * Creates directory ".modman" if it doesn't exist
 	 *
 	 * @param string
+	 * @param string
 	 */
-	public function doInit($sDirectory) {
+	public function doInit($sDirectory, $sBaseDir = null) {
 		$sModmanDirectory = $sDirectory . DIRECTORY_SEPARATOR . self::MODMAN_DIRECTORY_NAME;
 		if (!is_dir($sModmanDirectory)){
 			mkdir($sModmanDirectory);
+		}
+		if (!is_null($sBaseDir)) {
+			file_put_contents(self::getBaseDirFile(), $sBaseDir);
 		}
 	}
 }
@@ -224,7 +236,7 @@ class Modman_Command_Link {
 	 * creates the symlinks
 	 *
 	 * @param bool $bForce if true errors will be ignored
-	 * @throws Exception if module i already linked
+	 * @throws Exception if module is already linked
 	 */
 	public function createSymlinks($bForce = false) {
 		$sModuleName = basename($this->sTarget);
@@ -271,7 +283,12 @@ class Modman_Command_Link_Line {
 	 * @return string
 	 */
 	public function getSymlink() {
-		return getcwd() . DIRECTORY_SEPARATOR . $this->sSymlink;
+		$sBaseDir = getcwd();
+		$sBaseDirFile = Modman_Command_Init::getBaseDirFile();
+		if (file_exists($sBaseDirFile)) {
+			$sBaseDir = file_get_contents($sBaseDirFile);
+		}
+		return $sBaseDir . DIRECTORY_SEPARATOR . $this->sSymlink;
 	}
 
 	/**
