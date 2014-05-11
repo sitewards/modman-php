@@ -36,9 +36,6 @@ For Windows users there's also a batch file available, so instead of typing php 
     modman link c:\B2BProfessional
 
 
-VCS integration is postponed, because there are great clients out there, so we don't use it in modman anyway.
-
-
 Started at Magento Hackathon in Zürich 2013-03-09
 
 
@@ -58,7 +55,10 @@ or
     cd $PROJECT
     modman init <basedir>
 
-If you don't specify a basedir the current working directory will be used
+If you don't specify a basedir (aka magento directory) the current working directory will be used.
+The basedir functionality is supposed to be used to move the .modman directory outside of the magento main directory.
+- That first of all helps to structure your projects better
+- But is also a security feature as modman might link sensitive data like docs into your magento magento main directory.
 
 link
 ====
