@@ -274,7 +274,7 @@ class Modman_Command_Link_Line {
 	 * @return string
 	 */
 	public function getTarget() {
-		return $this->sTarget;
+		return rtrim($this->sTarget, DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -288,7 +288,7 @@ class Modman_Command_Link_Line {
 		if (file_exists($sBaseDirFile)) {
 			$sBaseDir = file_get_contents($sBaseDirFile);
 		}
-		return $sBaseDir . DIRECTORY_SEPARATOR . $this->sSymlink;
+		return $sBaseDir . DIRECTORY_SEPARATOR . rtrim($this->sSymlink, DIRECTORY_SEPARATOR);
 	}
 
 	/**
