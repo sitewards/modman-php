@@ -41,6 +41,7 @@ class Modman {
 					break;
 				case 'init':
 					$sCwd = getcwd();
+					$sBaseDir = null;
 					if (isset($aParameters[2])) {
 						$sBaseDir = $aParameters[2];
 					}
