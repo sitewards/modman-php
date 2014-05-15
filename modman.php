@@ -275,7 +275,7 @@ class Modman_Command_Link_Line {
 	 * @return string
 	 */
 	public function getTarget() {
-		return rtrim($this->sTarget, DIRECTORY_SEPARATOR);
+		return $this->rtrimDS($this->sTarget);
 	}
 
 	/**
@@ -289,7 +289,17 @@ class Modman_Command_Link_Line {
 		if (file_exists($sBaseDirFile)) {
 			$sBaseDir = file_get_contents($sBaseDirFile);
 		}
-		return $sBaseDir . DIRECTORY_SEPARATOR . rtrim($this->sSymlink, DIRECTORY_SEPARATOR);
+		return $sBaseDir . DIRECTORY_SEPARATOR . $this->rtrimDS($this->sSymlink);
+	}
+
+	/**
+	 * fixes trailing slahes on *nix systems
+	 *
+	 * @param $sDir
+	 * @return string
+	 */
+	private function rtrimDS($sDir) {
+		return rtrim($sDir, DIRECTORY_SEPARATOR);
 	}
 
 	/**
