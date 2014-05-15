@@ -293,7 +293,7 @@ class Modman_Command_Link_Line {
 	}
 
 	/**
-	 * fixes trailing slahes on *nix systems
+	 * fixes trailing slashes on *nix systems
 	 *
 	 * @param $sDir
 	 * @return string
