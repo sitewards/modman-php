@@ -393,7 +393,7 @@ class Modman_Reader {
 	 * @throws Exception if the path could not be parsed
 	 */
 	private function doImport($aCommandParams){
-		$sDirectoryName = realpath($aCommandParams[1]);
+		$sDirectoryName = realpath($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aCommandParams[1]);
 		if (!$sDirectoryName){
 			throw new Exception('The import path could not be parsed!');
 		}
@@ -401,7 +401,24 @@ class Modman_Reader {
 		$oModmanReader = new Modman_Reader($sDirectoryName);
 		$aObjects = $oModmanReader->getObjectsPerRow($this->sClassName);
 
-		$this->aObjects = array_merge($this->aObjects, $aObjects);
+		// Hack to make paths relative to $this->sModuleDirectory
+		// Fixes the case when the paths are relative to nested folder, eg "../../file"
+		$sBaseDir = getcwd();
+		$aObjectsFixed = array();
+		foreach ($aObjects as $iLine => $oLine) {
+			$sTarget = $oLine->getTarget();
+			$sTarget = realpath($sDirectoryName . DIRECTORY_SEPARATOR . $sTarget);
+			$sTarget = str_replace($this->sModuleDirectory, '', $sTarget);
+			$sTarget = trim($sTarget, DIRECTORY_SEPARATOR);
+
+			$sSymlink = $oLine->getSymlink();
+			$sSymlink = str_replace($sBaseDir, '', $sSymlink);
+			$sSymlink = trim($sSymlink, DIRECTORY_SEPARATOR);
+
+			$aObjectsFixed[] = new $this->sClassName(array($sTarget, $sSymlink));
+		}
+
+		$this->aObjects = array_merge($this->aObjects, $aObjectsFixed);
 	}
 
 	/**
