@@ -393,7 +393,8 @@ class Modman_Reader {
 	 * @throws Exception if the path could not be parsed
 	 */
 	private function doImport($aCommandParams){
-		$sDirectoryName = realpath($aCommandParams[1]);
+        // add the module directory to the import
+		$sDirectoryName = realpath($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aCommandParams[1]);
 		if (!$sDirectoryName){
 			throw new Exception('The import path could not be parsed!');
 		}
@@ -554,7 +555,7 @@ class Modman_Command_Deploy {
 		}
 		foreach ($aLines as $oLine) {
 			/* @var $oLine Modman_Command_Link_Line */
-			$sFullTarget = $sTarget . DIRECTORY_SEPARATOR . $oLine->getTarget();
+			$sFullTarget = $sTarget . DIRECTORY_SEPARATOR . realpath($oLine->getTarget());
 			if (!file_exists($sFullTarget)) {
 				throw new Exception('can not link to non-existing file ' . $sFullTarget);
 			}
@@ -1075,8 +1076,11 @@ class Modman_Command_Clone {
 	 * @throws Exception
 	 */
 	public function doClone($bForce = false, $bCreateModman = false){
+        // Perform a modman init when required
+        $sCwd = getcwd();
+        $sInitPath = realpath($sCwd);
         $oInit = new Modman_Command_Init();
-        $oInit->doInit();
+        $oInit->doInit($sInitPath);
 
 		if ($this->existsModuleFolder()){
 			if (!$bForce){
