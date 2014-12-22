@@ -538,6 +538,10 @@ class Modman_Command_Deploy {
 	 * @throws Exception on error
 	 */
 	public function doDeploy($bForce = false) {
+		if ($this->sModuleName === Modman_Command_Init::MODMAN_BASEDIR_FILE) {
+			return;
+		}
+        
 		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
 		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
 
