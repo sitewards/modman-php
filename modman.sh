@@ -14,10 +14,13 @@
 #
 function setupEnv() {
     shopt -s nocasematch
-    if [[ `uname -a` =~ cygwin ]]
+    if [[ `cmd /c ver` =~ Version\ *[6789] ]]
     then
-        CYGWIN=`echo "$CYGWIN" | sed -e 's/winsymlinks[:a-z]*//' -e 's/$/ winsymlinks:native/'`
-        export CYGWIN
+        if [[ `uname -a` =~ cygwin ]]
+        then
+            CYGWIN=`echo "$CYGWIN" | sed -e 's/winsymlinks[:a-z]*//' -e 's/$/ winsymlinks:native/'`
+            export CYGWIN
+        fi
     fi
 }
 
