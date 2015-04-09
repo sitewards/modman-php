@@ -1,0 +1,4 @@
+*.php   text
+*.json  text
+*.sh    eol=lf
+*.bat   eol=crlf
