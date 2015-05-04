@@ -12,9 +12,10 @@ Currently implemented:
  - clean (removes all dead symlinks)
  - create (creates a modman file for an existing module)
  - clone (clones a git repository)
+ - remove <target> (removes the symlinks)
 
 
---force is available for link, deploy, deploy-all and clone, if not set script aborts when conflicts are found
+--force is available for link, deploy, deploy-all, remove and clone, if not set script aborts when conflicts are found
 
 Usage examples:
 

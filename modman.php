@@ -12,6 +12,27 @@ class Modman {
 	const ERR_NO_MODMAN_FILE = 2;
 
 	/**
+	 * test if running under Cygwin
+	 * RJR 9-Apr-15
+	 *
+	 * @return bool true if running on Cygwin, otherwise false
+	 */
+	static function isCygWin() {
+		static  $bGotResult = false;    // cache the result
+		static  $bIsCygwin;             // the result
+
+		if (!$bGotResult) {
+			if (stripos(php_uname(),'cygwin') !== false) {
+				$bIsCygwin = true;
+			} else {
+				$bIsCygwin = false;
+			}
+			$bGotResult = true;
+		}
+		return $bIsCygwin;
+	}
+
+	/**
 	 * runs and dispatches the modman program
 	 *
 	 * @param $aParameters this is just a representation of $argv (the parameters which were used to launch the program)
@@ -133,6 +154,7 @@ Following general commands are currently supported:
 - clean
 - create (optional --force, --include <include_file> and --include-hidden)
 - clone (optional --force, --create-modman)
+- remove (optional --force)
 
 Currently supported in modman-files:
 - symlinks (with wildcards)
@@ -541,7 +563,7 @@ class Modman_Command_Deploy {
 		if ($this->sModuleName === Modman_Command_Init::MODMAN_BASEDIR_FILE) {
 			return;
 		}
-        
+
 		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
 		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
 
@@ -1139,7 +1161,13 @@ class Modman_Resource_Remover{
 	 */
 	public function doRemoveResource($sElementPath){
 		if (is_dir($sElementPath)){
-			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
+			//
+			// I'm not sure why the original logic uses rmdir on a link, but I've kept
+			// that logic and added the right logic for Cygwin.  RJR 9-Apr-15
+			//
+			if (is_link($sElementPath) AND Modman::isCygwin()){
+				unlink($sElementPath);
+			} elseif (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
 				rmdir($sElementPath);
 			}
 		} else if (is_file($sElementPath)){
