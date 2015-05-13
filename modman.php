@@ -287,7 +287,7 @@ class Modman_Command_Link_Line {
 		$sBaseDir = getcwd();
 		$sBaseDirFile = Modman_Command_Init::getBaseDirFile();
 		if (file_exists($sBaseDirFile)) {
-			$sBaseDir = file_get_contents($sBaseDirFile);
+			$sBaseDir = rtrim(array_shift(file($sBaseDirFile, FILE_IGNORE_NEW_LINES)));
 		}
 		return $sBaseDir . DIRECTORY_SEPARATOR . $this->rtrimDS($this->sSymlink);
 	}
