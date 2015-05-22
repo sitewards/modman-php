@@ -557,7 +557,8 @@ class Modman_Command_Deploy {
 				if (!is_dir($sDirectoryName)) {
 					$oConflicts->checkForConflict($sDirectoryName, 'dir');
 				}
-				$oConflicts->checkForConflict($oLine->getSymlink(), 'link', $oLine->getTarget());
+				$sFullTarget = $sTarget . DIRECTORY_SEPARATOR . $oLine->getTarget();
+				$oConflicts->checkForConflict($oLine->getSymlink(), 'link', $sFullTarget);
 			} else {
 				unset($aLines[$iLine]);
 			}
