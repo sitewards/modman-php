@@ -586,7 +586,9 @@ class Modman_Command_Deploy {
                 mkdir($sDirectoryName, 0777, true);
             }
             if (!is_link($oLine->getSymlink())) {
-                $sFullTarget = rtrim($this->makePathRelative($sFullTarget, realpath(dirname($oLine->getSymlink()))), '/');
+                $sFullTarget = str_replace('/', DIRECTORY_SEPARATOR, rtrim(
+                    $this->makePathRelative($sFullTarget, realpath(dirname($oLine->getSymlink()))), '/')
+                );
                 /*
                  * Change directory to be able to create relative symlinks
                  *
