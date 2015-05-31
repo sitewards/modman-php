@@ -1160,25 +1160,17 @@ class Modman_Resource_Remover{
 	 * @param string $sElementPath resource to remove
 	 */
 	public function doRemoveResource($sElementPath){
-		if (is_dir($sElementPath)){
-			//
-			// I'm not sure why the original logic uses rmdir on a link, but I've kept
-			// that logic and added the right logic for Cygwin.  RJR 9-Apr-15
-			//
-			if (is_link($sElementPath) AND Modman::isCygwin()){
-				unlink($sElementPath);
-			} elseif (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
-				rmdir($sElementPath);
-			}
-		} else if (is_file($sElementPath)){
-			// workaround for windows to delete read-only flag
-			// which prevents file from being deleted properly
-			chmod($sElementPath, 0777);
-			unlink($sElementPath);
-		}
-		elseif (is_link($sElementPath)){
-			unlink($sElementPath);
-		}
+
+        if (is_link($sElementPath)){
+            unlink($sElementPath);
+        } elseif (is_file($sElementPath)) {
+            // workaround for windows to delete read-only flag
+            // which prevents file from being deleted properly
+            chmod($sElementPath, 0777);
+            unlink($sElementPath);
+        } elseif ( is_dir($sElementPath) AND $this->isFolderEmpty($sElementPath) ) {
+            rmdir($sElementPath);
+        }
 	}
 
 	/**
