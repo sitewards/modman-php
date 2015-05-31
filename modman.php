@@ -123,15 +123,10 @@ class Modman {
                 )
             ));
             $sMessage = $oException->getMessage();
-            $sCowsay = @file_get_contents('http://cowsay.morecode.org/say?message=' . urlencode($sMessage) . '&format=text', false, $rCtx);
-            if ($sCowsay) {
-                echo $sCowsay;
-            } else {
-                echo '-----' . PHP_EOL;
-                echo 'An error occured:' . PHP_EOL;
-                echo $sMessage . PHP_EOL;
-                echo '-----';
-            }
+            echo '-----' . PHP_EOL;
+            echo 'An error occured:' . PHP_EOL;
+            echo $sMessage . PHP_EOL;
+            echo '-----';
 			echo PHP_EOL . PHP_EOL;
 			$this->printHelp();
 		}
