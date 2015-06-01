@@ -12,6 +12,27 @@ class Modman {
 	const ERR_NO_MODMAN_FILE = 2;
 
 	/**
+	 * test if running under Cygwin
+	 * RJR 9-Apr-15
+	 *
+	 * @return bool true if running on Cygwin, otherwise false
+	 */
+	static function isCygWin() {
+		static  $bGotResult = false;    // cache the result
+		static  $bIsCygwin;             // the result
+
+		if (!$bGotResult) {
+			if (stripos(php_uname(),'cygwin') !== false) {
+				$bIsCygwin = true;
+			} else {
+				$bIsCygwin = false;
+			}
+			$bGotResult = true;
+		}
+		return $bIsCygwin;
+	}
+
+	/**
 	 * runs and dispatches the modman program
 	 *
 	 * @param $aParameters this is just a representation of $argv (the parameters which were used to launch the program)
@@ -102,15 +123,10 @@ class Modman {
                 )
             ));
             $sMessage = $oException->getMessage();
-            $sCowsay = @file_get_contents('http://cowsay.morecode.org/say?message=' . urlencode($sMessage) . '&format=text', false, $rCtx);
-            if ($sCowsay) {
-                echo $sCowsay;
-            } else {
-                echo '-----' . PHP_EOL;
-                echo 'An error occured:' . PHP_EOL;
-                echo $sMessage . PHP_EOL;
-                echo '-----';
-            }
+            echo '-----' . PHP_EOL;
+            echo 'An error occured:' . PHP_EOL;
+            echo $sMessage . PHP_EOL;
+            echo '-----';
 			echo PHP_EOL . PHP_EOL;
 			$this->printHelp();
 		}
@@ -133,6 +149,7 @@ Following general commands are currently supported:
 - clean
 - create (optional --force, --include <include_file> and --include-hidden)
 - clone (optional --force, --create-modman)
+- remove (optional --force)
 
 Currently supported in modman-files:
 - symlinks (with wildcards)
@@ -541,7 +558,7 @@ class Modman_Command_Deploy {
 		if ($this->sModuleName === Modman_Command_Init::MODMAN_BASEDIR_FILE) {
 			return;
 		}
-        
+
 		$oModmanModuleSymlink = new Modman_Module_Symlink($this->sModuleName);
 		$sTarget = $oModmanModuleSymlink->getModmanModuleSymlinkPath();
 
@@ -1138,19 +1155,17 @@ class Modman_Resource_Remover{
 	 * @param string $sElementPath resource to remove
 	 */
 	public function doRemoveResource($sElementPath){
-		if (is_dir($sElementPath)){
-			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
-				rmdir($sElementPath);
-			}
-		} else if (is_file($sElementPath)){
-			// workaround for windows to delete read-only flag
-			// which prevents file from being deleted properly
-			chmod($sElementPath, 0777);
-			unlink($sElementPath);
-		}
-		elseif (is_link($sElementPath)){
-			unlink($sElementPath);
-		}
+
+        if (is_link($sElementPath)){
+            unlink($sElementPath);
+        } elseif (is_file($sElementPath)) {
+            // workaround for windows to delete read-only flag
+            // which prevents file from being deleted properly
+            chmod($sElementPath, 0777);
+            unlink($sElementPath);
+        } elseif ( is_dir($sElementPath) AND $this->isFolderEmpty($sElementPath) ) {
+            rmdir($sElementPath);
+        }
 	}
 
 	/**
