@@ -687,7 +687,7 @@ class Modman_Command_Clean {
 				continue;
 			}
 			$sFullFilename = $sDirectory . DIRECTORY_SEPARATOR . $sFilename;
-			if (is_dir($sFullFilename)) {
+            if (is_dir($sFullFilename) AND !is_link($sFullFilename)) {
 				$this->scanForDeadSymlinks($sFullFilename);
 			} elseif (is_link($sFullFilename) AND !file_exists(realpath($sFullFilename))) {
 				$this->aDeadSymlinks[] = $sFullFilename;
@@ -775,9 +775,12 @@ class Modman_Command_Create {
 	 * checks if a directory is empty
 	 *
 	 * @param string $sDirectoryPath
-	 * @return bool true if directory is empty
+	 * @return bool true if directory is empty (broken symlinks count as empty)
 	 */
 	private function isDirectoryEmpty($sDirectoryPath){
+		if (false === @readlink($sDirectoryPath)) {
+			return true;
+		}
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		return count($aCurrentDirectoryListing) <= 2;
 	}
