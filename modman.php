@@ -1140,15 +1140,17 @@ class Modman_Resource_Remover{
 	public function doRemoveResource($sElementPath){
 		if (is_dir($sElementPath)){
 			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
-				rmdir($sElementPath);
+				// workaround for windows to delete read-only flag
+				// which prevents link from being deleted properly
+                chmod($sElementPath, 0777);
+                rmdir($sElementPath);
 			}
-		} else if (is_file($sElementPath)){
+        } elseif (is_file($sElementPath)){
 			// workaround for windows to delete read-only flag
 			// which prevents file from being deleted properly
 			chmod($sElementPath, 0777);
 			unlink($sElementPath);
-		}
-		elseif (is_link($sElementPath)){
+        } elseif (is_link($sElementPath)){
 			unlink($sElementPath);
 		}
 	}
