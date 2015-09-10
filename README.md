@@ -15,6 +15,7 @@ Currently implemented:
 
 
 --force is available for link, deploy, deploy-all and clone, if not set script aborts when conflicts are found
+--copy is available for deploy and deploy-all, will copy the files and folders instead of symlinking them
 
 Usage examples:
 
@@ -80,6 +81,8 @@ Updates the symlinks of a linked module
 
 Optional parameter --force to automatically remove conflicted files
 
+Optional parameter --copy to copy files instead of creating symlinks
+
 deploy-all
 ==========
 
@@ -89,6 +92,8 @@ Updates all symlinks of linked modules
     modman deploy-all
 
 Optional parameter --force to automatically remove conflicted files
+
+Optional parameter --copy to copy files instead of creating symlinks
 
 repair
 ======

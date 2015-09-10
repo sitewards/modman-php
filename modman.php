@@ -14,7 +14,7 @@ class Modman {
 	/**
 	 * runs and dispatches the modman program
 	 *
-	 * @param $aParameters this is just a representation of $argv (the parameters which were used to launch the program)
+	 * @param $aParameters - this is just a representation of $argv (the parameters which were used to launch the program)
 	 */
 	public function run($aParameters) {
 		try {
@@ -24,7 +24,8 @@ class Modman {
 				exit;
 			}
 
-			$bForce = array_search('--force', $aParameters);
+			$bForce = in_array('--force', $aParameters, true);
+			$bCopy  = in_array('--copy', $aParameters, true);
 
 			switch ($aParameters[1]) {
 				case 'link':
@@ -54,14 +55,14 @@ class Modman {
 						throw new Exception('please specify module name');
 					}
 					$oDeploy = new Modman_Command_Deploy($aParameters[2]);
-					$oDeploy->doDeploy($bForce);
+					$oDeploy->doDeploy($bForce, $bCopy);
 					echo $aParameters[2] . ' has been deployed under ' . getcwd() . PHP_EOL;
 					break;
 				case 'repair':
 					$bForce = true;
 				case 'deploy-all':
 					$oDeployAll = new Modman_Command_All('Modman_Command_Deploy');
-					$oDeployAll->doDeploy($bForce);
+					$oDeployAll->doDeploy($bForce, $bCopy);
 					break;
 				case 'clean':
 					$oClean = new Modman_Command_Clean();
@@ -186,7 +187,7 @@ class Modman_Command_All {
 	public function __call($sMethodName, $aArguments) {
 		foreach ($this->getAllModules() as $sModuleName) {
 			$oClass = new $this->sClassName($sModuleName);
-			$oClass->$sMethodName(current($aArguments));
+			call_user_func_array(array($oClass, $sMethodName), $aArguments);
 		}
 	}
 }
@@ -535,9 +536,10 @@ class Modman_Command_Deploy {
 	 * executes the deploy
 	 *
 	 * @param bool $bForce=false true if errors should be ignored
+	 * @param bool $bCopy=false true if files and folders should be copied instead of symlinked
 	 * @throws Exception on error
 	 */
-	public function doDeploy($bForce = false) {
+	public function doDeploy($bForce = false, $bCopy = false) {
 		if ($this->sModuleName === Modman_Command_Init::MODMAN_BASEDIR_FILE) {
 			return;
 		}
@@ -587,10 +589,34 @@ class Modman_Command_Deploy {
 			}
 			if (!is_link($oLine->getSymlink())) {
 				echo ' Applied: ' . $oLine->getSymlink() . ' ' . $sFullTarget . PHP_EOL;
-				symlink(
-					$sFullTarget,
-					$oLine->getSymlink()
-				);
+
+				if ($bCopy) {
+					if (is_dir($sFullTarget)) {
+						mkdir($oLine->getSymlink());
+						$oIterator = new \RecursiveIteratorIterator(
+							new \RecursiveDirectoryIterator(
+								$sFullTarget,
+								\RecursiveDirectoryIterator::SKIP_DOTS
+							),
+							\RecursiveIteratorIterator::SELF_FIRST
+						);
+						foreach ($oIterator as $oItem) {
+							if ($oItem->isDir()) {
+								mkdir($oLine->getSymlink() . DIRECTORY_SEPARATOR . $oIterator->getSubPathName());
+							} else {
+								copy($oItem, $oLine->getSymlink() . DIRECTORY_SEPARATOR . $oIterator->getSubPathName());
+							}
+						}
+					} else {
+						copy($sFullTarget, $oLine->getSymlink());
+					}
+				} else {
+					symlink(
+						$sFullTarget,
+						$oLine->getSymlink()
+					);
+				}
+
 			}
 		}
 
