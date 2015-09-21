@@ -687,7 +687,7 @@ class Modman_Command_Clean {
 				continue;
 			}
 			$sFullFilename = $sDirectory . DIRECTORY_SEPARATOR . $sFilename;
-			if (is_dir($sFullFilename)) {
+            if (is_dir($sFullFilename) AND !is_link($sFullFilename)) {
 				$this->scanForDeadSymlinks($sFullFilename);
 			} elseif (is_link($sFullFilename) AND !file_exists(realpath($sFullFilename))) {
 				$this->aDeadSymlinks[] = $sFullFilename;
@@ -775,9 +775,12 @@ class Modman_Command_Create {
 	 * checks if a directory is empty
 	 *
 	 * @param string $sDirectoryPath
-	 * @return bool true if directory is empty
+	 * @return bool true if directory is empty (broken symlinks count as empty)
 	 */
 	private function isDirectoryEmpty($sDirectoryPath){
+		if (false === @readlink($sDirectoryPath)) {
+			return true;
+		}
 		$aCurrentDirectoryListing = scandir($sDirectoryPath);
 		return count($aCurrentDirectoryListing) <= 2;
 	}
@@ -1140,15 +1143,17 @@ class Modman_Resource_Remover{
 	public function doRemoveResource($sElementPath){
 		if (is_dir($sElementPath)){
 			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
-				rmdir($sElementPath);
+				// workaround for windows to delete read-only flag
+				// which prevents link from being deleted properly
+                chmod($sElementPath, 0777);
+                rmdir($sElementPath);
 			}
-		} else if (is_file($sElementPath)){
+        } elseif (is_file($sElementPath)){
 			// workaround for windows to delete read-only flag
 			// which prevents file from being deleted properly
 			chmod($sElementPath, 0777);
 			unlink($sElementPath);
-		}
-		elseif (is_link($sElementPath)){
+        } elseif (is_link($sElementPath)){
 			unlink($sElementPath);
 		}
 	}
