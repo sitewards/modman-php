@@ -682,7 +682,12 @@ class Modman_Command_Clean {
 	 */
 	public function doClean() {
 		$oResourceRemover = new Modman_Resource_Remover();
-		foreach ($this->getDeadSymlinks() as $sSymlink) {
+        $sBaseDirFile = Modman_Command_Init::getBaseDirFile();
+        $sBaseDir = null;
+        if (file_exists($sBaseDirFile)) {
+            $sBaseDir = file_get_contents($sBaseDirFile);
+        }
+		foreach ($this->getDeadSymlinks($sBaseDir) as $sSymlink) {
 			echo 'Remove ' . $sSymlink . '.' . PHP_EOL;
 			$oResourceRemover->doRemoveResource($sSymlink);
 		}
