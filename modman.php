@@ -1171,8 +1171,9 @@ class Modman_Resource_Remover{
 			if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
 				// workaround for windows to delete read-only flag
 				// which prevents link from being deleted properly
-                chmod($sElementPath, 0777);
-                rmdir($sElementPath);
+				chmod($sElementPath, 0777);
+				// directory symlinks must be deleted with rmdir on windows
+				@unlink($sElementPath) or rmdir($sElementPath);
 			}
         } elseif (is_file($sElementPath)){
 			// workaround for windows to delete read-only flag
