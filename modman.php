@@ -1162,22 +1162,36 @@ class Modman_Resource_Remover{
     }
 
     /**
+     * fixes permissions on windows to be
+     * able to delete files/links
+     *
+     * @param string $sElementPath
+     */
+    private function fixWindowsPermissions($sElementPath)
+    {
+        $sPhpOs = strtolower(PHP_OS);
+        if (strpos($sPhpOs, 'win') !== false) {
+            // workaround for windows to delete read-only flag
+            // which prevents link/file from being deleted properly
+            chmod($sElementPath, 0777);
+        }
+    }
+
+    /**
      * removes a resource
      *
      * @param string $sElementPath resource to remove
      */
     public function doRemoveResource($sElementPath){
         if (is_dir($sElementPath)){
-            if (is_link($sElementPath) OR $this->isFolderEmpty($sElementPath)){
-                // workaround for windows to delete read-only flag
-                // which prevents link from being deleted properly
-                chmod($sElementPath, 0777);
+            $this->fixWindowsPermissions($sElementPath);
+            if ($this->isFolderEmpty($sElementPath)){
                 rmdir($sElementPath);
+            } elseif (is_link($sElementPath)) {
+                unlink($sElementPath);
             }
         } elseif (is_file($sElementPath)){
-            // workaround for windows to delete read-only flag
-            // which prevents file from being deleted properly
-            chmod($sElementPath, 0777);
+            $this->fixWindowsPermissions($sElementPath);
             unlink($sElementPath);
         } elseif (is_link($sElementPath)){
             unlink($sElementPath);
