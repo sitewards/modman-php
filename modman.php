@@ -1162,6 +1162,17 @@ class Modman_Resource_Remover{
     }
 
     /**
+     * checks if it's windows environment
+     *
+     * @return bool
+     */
+    private function isWin()
+    {
+        $sPhpOs = strtolower(PHP_OS);
+        return strpos($sPhpOs, 'win') !== false;
+    }
+
+    /**
      * fixes permissions on windows to be
      * able to delete files/links
      *
@@ -1169,8 +1180,7 @@ class Modman_Resource_Remover{
      */
     private function fixWindowsPermissions($sElementPath)
     {
-        $sPhpOs = strtolower(PHP_OS);
-        if (strpos($sPhpOs, 'win') !== false) {
+        if ($this->isWin()) {
             // workaround for windows to delete read-only flag
             // which prevents link/file from being deleted properly
             chmod($sElementPath, 0777);
@@ -1188,7 +1198,11 @@ class Modman_Resource_Remover{
             if ($this->isFolderEmpty($sElementPath)){
                 rmdir($sElementPath);
             } elseif (is_link($sElementPath)) {
-                unlink($sElementPath);
+                if ($this->isWin()) {
+                    rmdir($sElementPath);
+                } else {
+                    unlink($sElementPath);
+                }
             }
         } elseif (is_file($sElementPath)){
             $this->fixWindowsPermissions($sElementPath);
