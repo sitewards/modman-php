@@ -1193,8 +1193,8 @@ class Modman_Resource_Remover{
      * @param string $sElementPath resource to remove
      */
     public function doRemoveResource($sElementPath){
+        $this->fixWindowsPermissions($sElementPath);
         if (is_dir($sElementPath)){
-            $this->fixWindowsPermissions($sElementPath);
             if ($this->isFolderEmpty($sElementPath)){
                 rmdir($sElementPath);
             } elseif (is_link($sElementPath)) {
@@ -1205,7 +1205,6 @@ class Modman_Resource_Remover{
                 }
             }
         } elseif (is_file($sElementPath)){
-            $this->fixWindowsPermissions($sElementPath);
             unlink($sElementPath);
         } elseif (is_link($sElementPath)){
             unlink($sElementPath);
