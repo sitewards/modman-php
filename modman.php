@@ -1191,6 +1191,7 @@ class Modman_Resource_Remover{
      * removes a resource
      *
      * @param string $sElementPath resource to remove
+     * @throws Exception
      */
     public function doRemoveResource($sElementPath){
         $this->fixWindowsPermissions($sElementPath);
@@ -1203,11 +1204,15 @@ class Modman_Resource_Remover{
                 } else {
                     unlink($sElementPath);
                 }
+            } else {
+                throw new InvalidArgumentException('A resource must be a file, an empty folder or a symlink.');
             }
         } elseif (is_file($sElementPath)){
             unlink($sElementPath);
         } elseif (is_link($sElementPath)){
             unlink($sElementPath);
+        } else {
+            throw new InvalidArgumentException('A resource must be a file, an empty folder or a symlink.');
         }
     }
 
