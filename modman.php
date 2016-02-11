@@ -92,6 +92,19 @@ class Modman {
                     $oClone = new Modman_Command_Clone($aParameters[2], new Modman_Command_Create());
                     $oClone->doClone($bForce, $bCreateModman);
                     break;
+                case 'update':
+                    if (!isset($aParameters[2])){
+                        throw new Exception('Please specify a module to update');
+                    }
+                    $oUpdate = new Modman_Command_Update();
+                    $force = trim($aParameters[2], '-') ? true :false;
+                    $oUpdate->updateModule($force);
+                    break;
+                case 'update-all':
+                    $oUpdate = new Modman_Command_Update();
+                    $force = trim($aParameters[2], '-') ? true :false;
+                    $oUpdate->updateAll($force);
+                    break;
                 default:
                     throw new Exception('command does not exist');
             }
@@ -134,6 +147,8 @@ Following general commands are currently supported:
 - clean
 - create (optional --force, --include <include_file> and --include-hidden)
 - clone (optional --force, --create-modman)
+- update
+- update-all
 
 Currently supported in modman-files:
 - symlinks (with wildcards)
@@ -1232,6 +1247,111 @@ class Modman_Resource_Remover{
         $this->doRemoveResource($sFolderName);
     }
 
+}
+
+
+/**
+ * Class Modman_Command_Update
+ *
+ * Extend Modman-PHP to support update and update-all
+ */
+class Modman_Command_Update {
+
+    private $_baseDir = '';
+    private $_modmanDir = '';
+
+    public function __construct() {
+        $this->_baseDir = getcwd();
+        $this->_modmanDir = $this->_baseDir . DIRECTORY_SEPARATOR.'.modman'.DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * update a modman module
+     * @param            $module
+     * @param bool|false $force
+     */
+    public function updateModule($module, $force = false) {
+        $modulePath = $this->_modmanDir . $module;
+        if (file_exists($this->_modmanDir)) {
+            if (file_exists($modulePath)) {
+                if (file_exists($modulePath . DIRECTORY_SEPARATOR . 'modman')) {
+                    chdir($modulePath);
+                    $execs = array();
+                    if (file_exists($modulePath . DIRECTORY_SEPARATOR . '.svn')) {
+                        // SVN Module
+                        if ($force) {
+                            $execs = array('svn update --force --non-interactive --trust-server-cert');
+                        }
+                        else {
+                            $execs = array('svn update');
+                        }
+                    }
+                    elseif (file_exists($modulePath . DIRECTORY_SEPARATOR . '.git')) {
+                        // Git Module
+                        $branch = $this->getTrackingBranch();
+                        if ($force) {
+                            $execs = array('git reset --hard ' . $branch, 'git submodule update --init --recursive');
+                        }
+                        else {
+                            $execs = array('git merge ' . $branch, 'git submodule update --init --recursive');
+                        }
+                    }else{
+                        return;
+                    }
+
+                    echo "Updating >$module<\n";
+
+                    $success = true;
+                    foreach ($execs as $exec) {
+                        try {
+                            exec($exec, $output);
+                            echo implode("\n",$output)."\n";
+                        }
+                        catch (Exception $e) {
+                            $success = false;
+                        }
+                    }
+
+                    if (!$success) {
+                        echo "Could not update >$module<\n";
+                    }
+                }
+                else {
+                    echo "Skipping >$module<: Not a modman module\n";
+                }
+            }
+            else {
+                throw new InvalidArgumentException("No module >$module< found");
+            }
+        }
+        else {
+            throw new InvalidArgumentException("Not a modman project");
+        }
+    }
+
+    /**
+     * update all modman-modules
+     * @param bool|false $force
+     */
+    public function updateAll($force = false) {
+        if(file_exists($this->_modmanDir) && is_dir($this->_modmanDir)){
+            $dirIterator = new DirectoryIterator($this->_modmanDir);
+            foreach($dirIterator as $file){
+                if(!$file->isDot() && $file->isDir()){
+                    $module = $file->getFilename();
+                    $this->updateModule($module, $force);
+                }
+            }
+        }
+        else {
+            throw new InvalidArgumentException("Not a modman project");
+        }
+    }
+
+    protected function getTrackingBranch(){
+        $branch = trim(shell_exec('git rev-parse --symbolic-full-name --abbrev-ref @{u}'));
+        return $branch;
+    }
 }
 
 $oModman = new Modman();
