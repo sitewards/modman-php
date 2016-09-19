@@ -143,6 +143,10 @@ EOH;
         echo $sHelp . PHP_EOL;
     }
 
+    function __call($name, $arguments)
+    {
+        // TODO: Implement __call() method.
+    }
 }
 
 class Modman_Command_All {
@@ -288,7 +292,7 @@ class Modman_Command_Link_Line {
         $sBaseDir = getcwd();
         $sBaseDirFile = Modman_Command_Init::getBaseDirFile();
         if (file_exists($sBaseDirFile)) {
-            $filecontent = file($sBaseDirFile, FILE_IGNORE_NEW_LINES));
+            $filecontent = file($sBaseDirFile, FILE_IGNORE_NEW_LINES);
             $sBaseDir = rtrim(array_shift($fileContent);
         }
         return $sBaseDir . DIRECTORY_SEPARATOR . $this->rtrimDS($this->sSymlink);
