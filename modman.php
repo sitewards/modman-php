@@ -377,7 +377,7 @@ class Modman_Reader {
             if (strstr($sLine, '*')) {
                 foreach (glob($this->sModuleDirectory . DIRECTORY_SEPARATOR . $aParameters[0]) as $sFilename) {
                     $sRelativeFilename = substr($sFilename, strlen($this->sModuleDirectory . DIRECTORY_SEPARATOR));
-                    $sRelativeTarget = str_replace(str_replace('*', '', $aParameters[0]), $aParameters[1], $sRelativeFilename);
+                    $sRelativeTarget = str_replace(substr($aParameters[0], 0, strpos($aParameters[0], '*')), $aParameters[1], $sRelativeFilename);
                     $this->aObjects[] = new $sClassName(array($sRelativeFilename, $sRelativeTarget));
                 }
             } else {
