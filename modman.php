@@ -1224,7 +1224,7 @@ class Modman_Resource_Remover{
      */
     public function doRemoveFolderRecursively($sFolderName){
 
-        $oDirectoryIterator = new RecursiveDirectoryIterator($sFolderName);
+        $oDirectoryIterator = new RecursiveDirectoryIterator($sFolderName, FilesystemIterator::SKIP_DOTS);
         /** @var SplFileInfo $oElement */
         foreach (new RecursiveIteratorIterator($oDirectoryIterator, RecursiveIteratorIterator::CHILD_FIRST) as $oElement){
             $this->doRemoveResource($oElement->getPathname());
